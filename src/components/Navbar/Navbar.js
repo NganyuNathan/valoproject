@@ -7,6 +7,7 @@ import { logout } from '../../services/authService';
 import useTheme from '../../hooks/useTheme';
 import toast from 'react-hot-toast';
 import './Navbar.css';
+// import valoLogo from './valo.jpeg';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -26,7 +27,8 @@ export default function Navbar() {
     <header className="navbar">
       <div className="container navbar__inner">
         <Link to="/" className="navbar__brand">
-          <span className="navbar__mark"> <img src="valo.jpeg" /></span>
+          {/* <span className="navbar__mark"> <img src="valo.jpeg" /></span> */}
+          <span className="navbar__mark"> <img src="/valo.jpeg" alt="Valointern logo" /></span>
           VALOINERN
         </Link>
 
