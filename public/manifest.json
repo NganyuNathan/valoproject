@@ -1,0 +1,9 @@
+{
+  "short_name": "InternPath",
+  "name": "InternPath - Student Internship Portal",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0d3d2f",
+  "background_color": "#ffffff"
+}

@@ -1,0 +1,53 @@
+/* ===== InternPath Design Tokens ===== */
+:root {
+  /* Brand palette - derived from the InternPath mark */
+  --color-ink: #0b241d;          /* near-black green, primary text */
+  --color-forest: #0d3d2f;       /* primary brand green */
+  --color-forest-dark: #082b21;
+  --color-mint-50: #eefaf3;      /* pale mint surface */
+  --color-mint-100: #dcf3e7;
+  --color-sand: #fbfaf6;         /* warm off-white page background */
+  --color-white: #ffffff;
+  --color-line: #e7e4db;         /* hairline borders on sand */
+  --color-line-soft: #eceae2;
+  --color-text: #16241d;
+  --color-text-muted: #5c6b62;
+  --color-text-faint: #8a9690;
+  --color-amber: #d98f3a;        /* accent for stipend / highlight chips */
+  --color-danger: #c1462f;
+  --color-success: #1f7a4d;
+
+  /* Dark mode surfaces (toggle via [data-theme="dark"]) */
+  --color-ink-dark-bg: #0b1512;
+  --color-ink-dark-surface: #10201a;
+
+  /* Type */
+  --font-display: 'Sora', 'Segoe UI', sans-serif;
+  --font-body: 'Manrope', 'Segoe UI', sans-serif;
+
+  /* Radii + shadow */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(11,36,29,0.04), 0 8px 24px -12px rgba(11,36,29,0.18);
+  --shadow-pop: 0 20px 45px -20px rgba(11,36,29,0.35);
+
+  /* Layout */
+  --header-height: 72px;
+  --sidebar-width: 260px;
+  --container-max: 1200px;
+}
+
+[data-theme="dark"] {
+  --color-sand: var(--color-ink-dark-bg);
+  --color-white: var(--color-ink-dark-surface);
+  --color-ink: #eaf1ec;
+  --color-text: #eaf1ec;
+  --color-text-muted: #a6b6ae;
+  --color-text-faint: #6f8079;
+  --color-line: #1d332a;
+  --color-line-soft: #17281f;
+  --color-mint-50: #12261d;
+  --color-mint-100: #16332656;
+}

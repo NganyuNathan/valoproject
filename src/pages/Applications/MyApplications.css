@@ -1,0 +1,7 @@
+.my-applications h1 { font-size: 1.6rem; margin-bottom: 20px; }
+.my-applications__table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.my-applications__table-wrap .table { min-width: 480px; }
+
+@media (max-width: 640px) {
+  .my-applications h1 { font-size: 1.3rem; }
+}

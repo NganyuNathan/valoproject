@@ -1,0 +1,9 @@
+.status-badge {
+  display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.status-badge--pending { background: #fdf0dc; color: #a4650f; }
+.status-badge--under_review { background: #e4edfa; color: #285ba6; }
+.status-badge--interview_scheduled { background: #eee3fb; color: #6b34b0; }
+.status-badge--accepted { background: #e3f6ea; color: #1f7a4d; }
+.status-badge--rejected { background: #fbe9e5; color: #c1462f; }

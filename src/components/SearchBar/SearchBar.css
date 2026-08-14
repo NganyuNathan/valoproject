@@ -1,0 +1,14 @@
+.searchbar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--color-white); border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill); padding: 6px 6px 6px 20px;
+  box-shadow: var(--shadow-card);
+}
+.searchbar__icon { color: var(--color-text-faint); font-size: 1.1rem; flex-shrink: 0; }
+.searchbar__input { flex: 1; border: none; outline: none; background: transparent; font-size: 0.95rem; padding: 10px 0; color: var(--color-text); }
+.searchbar__btn { flex-shrink: 0; }
+.searchbar--sm { padding: 4px 4px 4px 14px; }
+@media (max-width: 560px) {
+  .searchbar { flex-wrap: wrap; border-radius: var(--radius-lg); padding: 12px; }
+  .searchbar__btn { width: 100%; }
+}

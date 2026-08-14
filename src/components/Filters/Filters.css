@@ -1,0 +1,5 @@
+.filters { padding: 22px; position: sticky; top: calc(var(--header-height) + 20px); }
+.filters__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.filters__header h3 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.filters__field { margin-bottom: 14px; }
+@media (max-width: 900px) { .filters { position: static; } }

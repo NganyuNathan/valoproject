@@ -1,0 +1,13 @@
+.companies-page { padding: 40px 0 80px; }
+.companies-page h1 { font-size: 2rem; }
+.companies-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; }
+.company-card { padding: 22px; }
+.company-card__logo {
+  width: 48px; height: 48px; border-radius: 12px; background: var(--color-mint-50); color: var(--color-forest);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 12px; overflow: hidden;
+}
+.company-card__logo img { width: 100%; height: 100%; object-fit: cover; }
+.company-card h3 { font-size: 1rem; margin-bottom: 6px; }
+.company-card p { font-size: 0.85rem; margin-top: 10px; }
+@media (max-width: 900px) { .companies-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .companies-grid { grid-template-columns: 1fr; } }

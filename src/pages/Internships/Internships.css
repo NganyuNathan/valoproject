@@ -1,0 +1,15 @@
+.internships-page { padding: 40px 0 80px; }
+.internships-page__header { margin-bottom: 24px; }
+.internships-page__header h1 { font-size: 2.1rem; }
+.internships-page__header p { color: var(--color-text-muted); }
+.internships-page__body { display: grid; grid-template-columns: 260px 1fr; gap: 28px; margin-top: 24px; }
+.internships-page__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.pagination { display: flex; gap: 8px; margin-top: 28px; justify-content: center; }
+.pagination__btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--color-line); background: var(--color-white); font-weight: 600; }
+.pagination__btn.active { background: var(--color-forest); color: #fff; border-color: var(--color-forest); }
+.empty-state { padding: 48px; text-align: center; }
+
+@media (max-width: 900px) {
+  .internships-page__body { grid-template-columns: 1fr; }
+  .internships-page__grid { grid-template-columns: 1fr; }
+}
