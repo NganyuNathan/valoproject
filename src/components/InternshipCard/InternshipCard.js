@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { HiOutlineLocationMarker, HiOutlineClock, HiOutlineCurrencyDollar, HiOutlineCalendar, HiOutlineBookmark, HiBookmark } from 'react-icons/hi';
 // import { formatCurrency, formatDate, daysUntil, initials } from '../../utils/formatters';
 import { formatDate, daysUntil, initials } from '../../utils/formatters';
+import './InternshipCard.css';
 
 export default function InternshipCard({ internship, saved, onSave, onApply, showApply = true }) {
   if (!internship) return null;
