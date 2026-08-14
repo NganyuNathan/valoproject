@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineMenu, HiOutlineX, HiOutlineAcademicCap, HiOutlineSun, HiOutlineMoon } from 'react-icons/hi';
+import { HiOutlineMenu, HiOutlineX, HiOutlineSun, HiOutlineMoon } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../services/authService';
 import useTheme from '../../hooks/useTheme';

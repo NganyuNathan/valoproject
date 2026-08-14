@@ -86,7 +86,7 @@ export default function Landing() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <img src="landing.jpeg" alt="landing.jpeg" />
+            <img src="/landing.jpeg" alt="landing.jpeg" />
           </motion.div>
         </div>
       </section>
