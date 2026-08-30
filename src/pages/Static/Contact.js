@@ -14,7 +14,7 @@ const CONTACT = {
 export default function Contact() {
   return (
     <StaticPage title="Contact us">
-      <p>Have a question or need help with your account? Reach us directly:</p>
+      <p>If you want to be an intern in a company that is not in our platform you can contact the number below:</p>
       <div className="contact-cards">
         <a href={CONTACT.whatsappLink} target="_blank" rel="noopener noreferrer" className="card contact-card">
           <span className="contact-card__icon contact-card__icon--whatsapp"><FaWhatsapp /></span>

@@ -28,8 +28,16 @@ export default function InternshipManagement() {
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const openNew = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
-  const openEdit = (item) => { setForm({ ...emptyForm, ...item, company_id: item.company_id }); setEditingId(item.id); setShowForm(true); };
-
+  
+  const openEdit = (item) => {
+  const editable = Object.keys(emptyForm).reduce((acc, key) => {
+    acc[key] = item[key] ?? emptyForm[key];
+    return acc;
+  }, {});
+  setForm(editable);
+  setEditingId(item.id);
+  setShowForm(true);
+};
   const handleImageUpload = (slot) => async (e) => {
     const file = e.target.files[0];
     if (!file) return;
