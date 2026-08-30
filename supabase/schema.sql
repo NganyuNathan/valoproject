@@ -70,6 +70,8 @@ create table if not exists internships (
   benefits text,
   status text not null default 'published' check (status in ('draft', 'published', 'archived')),
   deadline date,
+  image_1_url text,   -- optional photo shown on the internship details page
+  image_2_url text,   -- optional second photo
   created_at timestamptz default now()
 );
 
@@ -150,6 +152,9 @@ do $$ begin
     check (payment_status in ('unpaid', 'reported', 'verified', 'rejected'));
 exception when duplicate_object then null;
 end $$;
+
+alter table internships add column if not exists image_1_url text;
+alter table internships add column if not exists image_2_url text;
 
 -- =========================================================
 -- Row Level Security
@@ -319,6 +324,7 @@ create trigger trg_new_announcement
 --   resumes           (private — owner read/write, admin read)
 --   cover-letters      (private — owner read/write, admin read)
 --   company-logos      (public read, admin write)
+--   internship-images  (public read, admin write)
 --
 -- Storage RLS is separate from table RLS above and lives on storage.objects.
 -- Run these AFTER creating the buckets in the dashboard:
@@ -361,3 +367,12 @@ create policy "Admins manage company logos"
   on storage.objects for all
   using (bucket_id = 'company-logos' and is_admin())
   with check (bucket_id = 'company-logos' and is_admin());
+
+create policy "Anyone can view internship images"
+  on storage.objects for select
+  using (bucket_id = 'internship-images');
+
+create policy "Admins manage internship images"
+  on storage.objects for all
+  using (bucket_id = 'internship-images' and is_admin())
+  with check (bucket_id = 'internship-images' and is_admin());

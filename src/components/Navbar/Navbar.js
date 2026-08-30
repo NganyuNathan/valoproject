@@ -29,7 +29,7 @@ export default function Navbar() {
         <Link to="/" className="navbar__brand">
           {/* <span className="navbar__mark"> <img src="valo.jpeg" /></span> */}
           <span className="navbar__mark"> <img src="/valo.jpeg" alt="Valointern logo" /></span>
-          VALOINERN
+          VALOINTERN
         </Link>
 
         <nav className="navbar__links navbar__links--desktop">

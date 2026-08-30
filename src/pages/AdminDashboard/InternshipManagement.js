@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineArchive } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineArchive, HiOutlineUpload, HiOutlineX } from 'react-icons/hi';
 import { listInternships, createInternship, updateInternship, deleteInternship, setInternshipStatus } from '../../services/internshipService';
 import { listCompanies } from '../../services/companyService';
+import { uploadFile, BUCKETS } from '../../services/supabase';
 import './AdminTables.css';
 
-const emptyForm = { company_id: '', title: '', description: '', responsibilities: '', requirements: '', skills_required: '', salary: '', location: '', internship_type: 'remote', duration: '', category: '', deadline: '', status: 'published' };
+const emptyForm = { company_id: '', title: '', description: '', responsibilities: '', requirements: '', skills_required: '', salary: '', location: '', internship_type: 'remote', duration: '', category: '', deadline: '', status: 'published', image_1_url: '', image_2_url: '' };
 
 export default function InternshipManagement() {
   const [items, setItems] = useState([]);
@@ -14,6 +15,7 @@ export default function InternshipManagement() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(null); // '1' | '2' | null
 
   const load = () => {
     setLoading(true);
@@ -27,6 +29,23 @@ export default function InternshipManagement() {
 
   const openNew = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
   const openEdit = (item) => { setForm({ ...emptyForm, ...item, company_id: item.company_id }); setEditingId(item.id); setShowForm(true); };
+
+  const handleImageUpload = (slot) => async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImage(slot);
+    try {
+      const url = await uploadFile(BUCKETS.INTERNSHIP_IMAGES, `${Date.now()}-${slot}-${file.name}`, file);
+      setForm((f) => ({ ...f, [`image_${slot}_url`]: url }));
+      toast.success('Image uploaded');
+    } catch (err) {
+      toast.error(err.message || 'Could not upload image');
+    } finally {
+      setUploadingImage(null);
+    }
+  };
+
+  const removeImage = (slot) => setForm((f) => ({ ...f, [`image_${slot}_url`]: '' }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,9 +134,44 @@ export default function InternshipManagement() {
                 <div className="field"><label>Category</label><input className="input" value={form.category} onChange={set('category')} /></div>
                 <div className="field"><label>Deadline</label><input className="input" type="date" value={form.deadline} onChange={set('deadline')} /></div>
               </div>
+
+              <div className="field">
+                <label>Photos (optional, up to 2)</label>
+                <div className="internship-image-row">
+                  {['1', '2'].map((slot) => {
+                    const url = form[`image_${slot}_url`];
+                    return (
+                      <div key={slot} className="internship-image-slot">
+                        {url ? (
+                          <div className="internship-image-slot__preview">
+                            <img src={url} alt={`Internship ${slot}`} />
+                            <button type="button" className="internship-image-slot__remove" onClick={() => removeImage(slot)} aria-label="Remove image">
+                              <HiOutlineX />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className={`internship-image-slot__upload ${uploadingImage === slot ? 'is-uploading' : ''}`}>
+                            <span className="internship-image-slot__icon"><HiOutlineUpload /></span>
+                            <span className="internship-image-slot__text">
+                              {uploadingImage === slot ? 'Uploading…' : (
+                                <>
+                                  <strong>Upload photo {slot}</strong>
+                                  <span>PNG or JPG</span>
+                                </>
+                              )}
+                            </span>
+                            <input type="file" accept="image/*" className="visually-hidden" onChange={handleImageUpload(slot)} disabled={uploadingImage !== null} />
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="modal-actions">
                 <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editingId ? 'Save changes' : 'Publish internship'}</button>
+                <button type="submit" className="btn btn-primary" disabled={uploadingImage !== null}>{editingId ? 'Save changes' : 'Publish internship'}</button>
               </div>
             </form>
           </div>

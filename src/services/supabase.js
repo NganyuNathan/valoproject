@@ -24,6 +24,7 @@ export const BUCKETS = {
   RESUMES: 'resumes',
   COVER_LETTERS: 'cover-letters',
   COMPANY_LOGOS: 'company-logos',
+  INTERNSHIP_IMAGES: 'internship-images',
 };
 
 // Buckets that hold sensitive documents — never made public, always accessed via signed URLs.
