@@ -6,8 +6,8 @@ import './Contact.css';
 
 // Edit these two values with your real contact details.
 const CONTACT = {
-  whatsappNumber: '+237 654 101 614', // display format
-  whatsappLink: 'https://wa.me/654101614', // digits only, no + or spaces, country code first
+  whatsappNumber: '+1(701) 620-0463', // display format
+  whatsappLink: 'https://wa.me/+1(701) 620-0463', // digits only, no + or spaces, country code first
   email: 'valointern237@gmail.com',
 };
 
