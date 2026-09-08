@@ -1,8 +1,8 @@
-.static-page { padding: 48px 0 80px; max-width: 760px; }
+.static-page { padding-top: 48px; padding-bottom: 80px; max-width: 760px; }
 .static-page h1 { font-size: 2rem; margin-bottom: 20px; }
 .static-page__body p { margin-bottom: 14px; }
 
 @media (max-width: 640px) {
-  .static-page { padding: 28px 0 56px; }
+  .static-page { padding-top: 28px; padding-bottom: 56px; padding-left: 20px; padding-right: 20px; }
   .static-page h1 { font-size: 1.6rem; margin-bottom: 16px; }
 }

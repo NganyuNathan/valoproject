@@ -1,4 +1,4 @@
-.internships-page { padding: 40px 0 80px; }
+.internships-page { padding-top: 40px; padding-bottom: 80px; }
 .internships-page__header { margin-bottom: 24px; }
 .internships-page__header h1 { font-size: 2.1rem; }
 .internships-page__header p { color: var(--color-text-muted); }
@@ -15,7 +15,7 @@
 }
 
 @media (max-width: 640px) {
-  .internships-page { padding: 24px 0 56px; }
+  .internships-page { padding-top: 24px; padding-bottom: 56px; padding-left: 20px; padding-right: 20px; }
   .internships-page__header { margin-bottom: 18px; }
   .internships-page__header h1 { font-size: 1.6rem; }
   .internships-page__body { gap: 18px; }
