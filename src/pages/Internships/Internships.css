@@ -13,3 +13,11 @@
   .internships-page__body { grid-template-columns: 1fr; }
   .internships-page__grid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 640px) {
+  .internships-page { padding: 24px 0 56px; }
+  .internships-page__header { margin-bottom: 18px; }
+  .internships-page__header h1 { font-size: 1.6rem; }
+  .internships-page__body { gap: 18px; }
+  .empty-state { padding: 32px 20px; }
+}

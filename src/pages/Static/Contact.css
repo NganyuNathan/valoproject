@@ -10,3 +10,9 @@
 .contact-card__icon--email { background: var(--color-mint-50); color: var(--color-forest); }
 .contact-card__label { font-size: 0.78rem; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.03em; }
 .contact-card__value { font-weight: 600; color: var(--color-text); }
+
+@media (max-width: 640px) {
+  .contact-cards { max-width: 100%; gap: 12px; }
+  .contact-card { padding: 16px 18px; gap: 14px; }
+  .contact-card__icon { width: 40px; height: 40px; font-size: 1.25rem; }
+}

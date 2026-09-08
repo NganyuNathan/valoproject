@@ -10,4 +10,9 @@
 .company-card h3 { font-size: 1rem; margin-bottom: 6px; }
 .company-card p { font-size: 0.85rem; margin-top: 10px; }
 @media (max-width: 900px) { .companies-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .companies-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .companies-page { padding: 24px 0 56px; }
+  .companies-page h1 { font-size: 1.6rem; }
+  .companies-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 20px; }
+  .company-card { padding: 18px 16px; }
+}

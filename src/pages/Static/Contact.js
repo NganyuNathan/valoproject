@@ -6,15 +6,15 @@ import './Contact.css';
 
 // Edit these two values with your real contact details.
 const CONTACT = {
-  whatsappNumber: '+1(701) 620-0463', // display format
-  whatsappLink: 'https://wa.me/+1(701) 620-0463', // digits only, no + or spaces, country code first
+  whatsappNumber: '+237 654 101 614', // display format
+  whatsappLink: 'https://wa.me/654101614', // digits only, no + or spaces, country code first
   email: 'valointern237@gmail.com',
 };
 
 export default function Contact() {
   return (
     <StaticPage title="Contact us">
-      <p>If you want to be an intern in a company that is not in our platform you can contact the number below:</p>
+      <p>Have a question or need help with your account? Reach us directly:</p>
       <div className="contact-cards">
         <a href={CONTACT.whatsappLink} target="_blank" rel="noopener noreferrer" className="card contact-card">
           <span className="contact-card__icon contact-card__icon--whatsapp"><FaWhatsapp /></span>
