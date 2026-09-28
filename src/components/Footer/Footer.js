@@ -11,7 +11,7 @@ export default function Footer() {
         <div>
           <div className="footer__brand">
             <span className="navbar__mark"><HiOutlineAcademicCap /></span>
-            InternPath
+            Valointern
           </div>
           <p>One portal for verified placements, honest stipend information, and applications you can actually keep track of.</p>
           <div className="footer__social">
