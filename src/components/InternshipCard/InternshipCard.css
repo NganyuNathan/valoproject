@@ -36,3 +36,6 @@
   .internship-card__buttons { width: 100%; }
   .internship-card__buttons .btn { flex: 1; }
 }
+
+.internship-card__departments { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip--department { background: #eef1fb; color: #3a4ba0; }

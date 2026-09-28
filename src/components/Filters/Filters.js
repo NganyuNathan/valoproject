@@ -3,7 +3,6 @@ import './Filters.css';
 
 const CATEGORIES = ['Software Engineering', 'Web Development', 'Mobile Development', 'Data Science', 'Artificial Intelligence', 'Cybersecurity', 'Networking', 'Cloud Computing', 'Finance', 'Accounting', 'Marketing', 'Graphic Design', 'Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering'];
 const WORK_MODES = ['remote', 'hybrid', 'onsite'];
-const DURATIONS = ['1 Month', '2 Months', '3 Months', '6 Months', '12 Months'];
 
 function Select({ label, value, onChange, options }) {
   return (
@@ -30,11 +29,9 @@ export default function Filters({ filters, onChange, onReset }) {
       </div>
       <Select label="Category" value={filters.category} onChange={set('category')} options={CATEGORIES} />
       <Select label="Work mode" value={filters.workMode} onChange={set('workMode')} options={WORK_MODES} />
-      <Select label="Compensation" value={filters.paid} onChange={set('paid')} options={['paid', 'unpaid']} />
-      <Select label="Duration" value={filters.duration} onChange={set('duration')} options={DURATIONS} />
       <div className="field filters__field">
         <label>Location</label>
-        <input className="input" placeholder="City or 'remote'" value={filters.location} onChange={(e) => onChange({ location: e.target.value })} />
+        <input className="input" placeholder="any" value={filters.location} onChange={(e) => onChange({ location: e.target.value })} />
       </div>
     </aside>
   );

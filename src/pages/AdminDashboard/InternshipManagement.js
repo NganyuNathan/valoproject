@@ -6,7 +6,7 @@ import { listCompanies } from '../../services/companyService';
 import { uploadFile, BUCKETS } from '../../services/supabase';
 import './AdminTables.css';
 
-const emptyForm = { company_id: '', title: '', description: '', responsibilities: '', requirements: '', skills_required: '', salary: '', location: '', internship_type: 'remote', duration: '', category: '', deadline: '', status: 'published', image_1_url: '', image_2_url: '' };
+const emptyForm = { company_id: '', title: '', description: '', responsibilities: '', requirements: '', skills_required: '', departments: '', salary: '', location: '', internship_type: 'remote', duration: '', category: '', deadline: '', status: 'published', image_1_url: '', image_2_url: '' };
 
 export default function InternshipManagement() {
   const [items, setItems] = useState([]);
@@ -129,6 +129,11 @@ export default function InternshipManagement() {
               <div className="field"><label>Responsibilities (one per line)</label><textarea className="input" rows={3} value={form.responsibilities} onChange={set('responsibilities')} /></div>
               <div className="field"><label>Requirements (one per line)</label><textarea className="input" rows={3} value={form.requirements} onChange={set('requirements')} /></div>
               <div className="field"><label>Skills required (comma separated)</label><input className="input" value={form.skills_required} onChange={set('skills_required')} /></div>
+              <div className="field">
+                <label>Departments (comma separated)</label>
+                <input className="input" value={form.departments} onChange={set('departments')} placeholder="e.g. Engineering, Marketing, Finance" />
+                <div className="field-hint">Add one or more departments this internship belongs to.</div>
+              </div>
               <div className="grid-2">
                 <div className="field"><label>Salary / stipend</label><input className="input" type="number" value={form.salary} onChange={set('salary')} /></div>
                 <div className="field"><label>Location</label><input className="input" value={form.location} onChange={set('location')} /></div>

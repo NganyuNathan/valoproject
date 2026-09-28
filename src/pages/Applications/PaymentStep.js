@@ -1,36 +1,47 @@
 import React, { useState } from 'react';
-import { HiOutlinePhone, HiOutlineInformationCircle } from 'react-icons/hi';
-import { PAYMENT_CONFIG, buildMtnDialLink, buildOrangeDialLink } from '../../config/payment';
-
-const isMobileBrowser = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+import { HiOutlineCreditCard, HiOutlineExternalLink, HiOutlineXCircle } from 'react-icons/hi';
+import { PAYMENT_CONFIG } from '../../config/payment';
+import { requestFapshiPayment, pollFapshiPayment } from '../../services/paymentService';
 
 /**
- * Step 1 of applying: pay the application fee via mobile money.
- *
- * IMPORTANT — this is a "click to dial" convenience, not a payment API.
- * Tapping a button opens the phone's own dialer pre-filled with the USSD
- * string; the student still has to tap Call themselves and enter their own
- * MoMo/Orange Money PIN on their own device. Nothing is charged
- * automatically, and this app has no way to confirm the payment actually
- * went through — the student self-reports the SMS confirmation code they
- * receive, and an admin cross-checks it manually before approving.
+ * Step 1 of applying: pay the application fee via Fapshi's hosted checkout
+ * (covers both MTN MoMo and Orange Money on one page). The student pays and
+ * confirms on their own phone on Fapshi's page — we only poll for the real,
+ * confirmed result. Nothing here can be faked by editing form data, since
+ * `payment_status` is only ever written by the trusted backend function.
  */
-export default function PaymentStep({ onConfirmed }) {
-  const [method, setMethod] = useState(null); // 'mtn' | 'orange'
-  const [dialed, setDialed] = useState(false);
-  const [reference, setReference] = useState('');
-  const mobile = isMobileBrowser();
+export default function PaymentStep({ applicationId, userId, email, onConfirmed }) {
+  const [stage, setStage] = useState('idle'); // 'idle' | 'redirecting' | 'waiting' | 'failed'
+  const [error, setError] = useState(null);
 
-  const handleDial = (m) => {
-    setMethod(m);
-    setDialed(true);
-    window.location.href = m === 'mtn' ? buildMtnDialLink() : buildOrangeDialLink();
-  };
+  const handlePay = async () => {
+    setStage('redirecting');
+    setError(null);
+    try {
+      const { link, transId } = await requestFapshiPayment({
+        applicationId, userId, email, amount: PAYMENT_CONFIG.amount,
+      });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!method || !reference.trim()) return;
-    onConfirmed({ method, reference: reference.trim() });
+      const checkoutWindow = window.open(link, '_blank', 'noopener,noreferrer');
+      if (!checkoutWindow) {
+        // Popup blocked — fall back to the current tab.
+        window.location.href = link;
+        return;
+      }
+
+      setStage('waiting');
+      const result = await pollFapshiPayment({ transId, applicationId });
+
+      if (result.status === 'SUCCESSFUL') {
+        onConfirmed();
+      } else {
+        setStage('failed');
+        setError('Payment was not completed. You can try again.');
+      }
+    } catch (err) {
+      setStage('failed');
+      setError(err.message || 'Something went wrong starting the payment.');
+    }
   };
 
   return (
@@ -40,43 +51,36 @@ export default function PaymentStep({ onConfirmed }) {
         <strong>{PAYMENT_CONFIG.amount} {PAYMENT_CONFIG.currency}</strong>
       </div>
 
-      {!mobile && (
-        <div className="payment-step__notice">
-          <HiOutlineInformationCircle />
-          You're on a computer, so we can't open your phone's dialer directly. Open this page on your phone to use the one-tap payment buttons below, or dial the USSD code manually from your phone.
+      <p className="payment-step__help">
+        Pay securely via MTN MoMo or Orange Money on Fapshi's checkout page. You'll confirm the payment yourself on your own phone — we only find out once it's genuinely completed.
+      </p>
+
+      {stage === 'idle' && (
+        <button type="button" className="btn btn-primary btn-block payment-step__pay-btn" onClick={handlePay}>
+          <HiOutlineCreditCard /> Pay with Fapshi <HiOutlineExternalLink />
+        </button>
+      )}
+
+      {stage === 'redirecting' && (
+        <div className="payment-step__status">
+          <span className="payment-step__spinner" />
+          Opening secure checkout…
         </div>
       )}
 
-      <p className="payment-step__help">
-        Tap a button below to open your phone's dialer with the payment already filled in. You'll still need to tap <strong>Call</strong> yourself and enter your own PIN — we never do this automatically.
-      </p>
+      {stage === 'waiting' && (
+        <div className="payment-step__status">
+          <span className="payment-step__spinner" />
+          Waiting for you to complete payment in the other tab…
+        </div>
+      )}
 
-      <div className="payment-step__buttons">
-        <button type="button" className="btn btn-outline payment-step__method" onClick={() => handleDial('mtn')}>
-          <HiOutlinePhone /> Pay with MTN MoMo
-        </button>
-        <button type="button" className="btn btn-outline payment-step__method" onClick={() => handleDial('orange')}>
-          <HiOutlinePhone /> Pay with Orange Money
-        </button>
-      </div>
-
-      {dialed && (
-        <form onSubmit={handleSubmit} className="payment-step__confirm">
-          <div className="field">
-            <label>Confirmation code from your payment SMS</label>
-            <input
-              className="input"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="e.g. the code MTN/Orange texted you"
-              required
-            />
-            <div className="field-hint">We'll ask an admin to verify this against your payment before your application is approved.</div>
-          </div>
-          <button className="btn btn-primary btn-block" disabled={!reference.trim()}>
-            I've paid — continue to application
-          </button>
-        </form>
+      {stage === 'failed' && (
+        <div className="payment-step__result payment-step__result--failed">
+          <HiOutlineXCircle />
+          <span>{error}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={handlePay}>Try again</button>
+        </div>
       )}
     </div>
   );

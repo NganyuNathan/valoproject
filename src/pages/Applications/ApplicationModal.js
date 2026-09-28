@@ -1,26 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { HiOutlineX, HiOutlineUpload } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext';
-import { applyToInternship } from '../../services/applicationService';
+import { createOrGetDraftApplication, updateApplicationDetails } from '../../services/applicationService';
 import { uploadPrivateFile, BUCKETS } from '../../services/supabase';
 import PaymentStep from './PaymentStep';
 import './Applications.css';
 
 export default function ApplicationModal({ internship, onClose }) {
   const { user, profile } = useAuth();
-  const [step, setStep] = useState('payment'); // 'payment' | 'form'
-  const [payment, setPayment] = useState(null); // { method, reference }
+  const [step, setStep] = useState('loading'); // 'loading' | 'payment' | 'form'
+  const [applicationId, setApplicationId] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
   const [coverLetterFile, setCoverLetterFile] = useState(null);
   const [motivation, setMotivation] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handlePaymentConfirmed = (paymentInfo) => {
-    setPayment(paymentInfo);
-    setStep('form');
-  };
+  // Create (or resume) the application row as soon as the modal opens, so
+  // Fapshi has a real application id to attach the payment to.
+  useEffect(() => {
+    let cancelled = false;
+    createOrGetDraftApplication({ studentId: user.id, internshipId: internship.id })
+      .then((app) => {
+        if (cancelled) return;
+        setApplicationId(app.id);
+        setStep(app.payment_status === 'verified' ? 'form' : 'payment');
+      })
+      .catch((err) => {
+        toast.error(err.message || 'Could not start your application');
+        onClose();
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internship.id, user.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,17 +53,11 @@ export default function ApplicationModal({ internship, onClose }) {
         coverLetterUrl = await uploadPrivateFile(BUCKETS.COVER_LETTERS, `${user.id}/${Date.now()}-${coverLetterFile.name}`, coverLetterFile);
       }
 
-      await applyToInternship({
-        studentId: user.id,
-        internshipId: internship.id,
-        resumeUrl,
-        coverLetterUrl,
-        motivationLetter: motivation,
-        paymentMethod: payment?.method,
-        paymentReference: payment?.reference,
+      await updateApplicationDetails(applicationId, {
+        resumeUrl, coverLetterUrl, motivationLetter: motivation,
       });
 
-      toast.success('Application submitted! We\'ll verify your payment before reviewing it.');
+      toast.success('Application submitted!');
       onClose();
     } catch (err) {
       toast.error(err.message || 'Could not submit application');
@@ -74,15 +81,24 @@ export default function ApplicationModal({ internship, onClose }) {
             <button className="modal__close" onClick={onClose} aria-label="Close"><HiOutlineX /></button>
           </div>
 
-          {step === 'payment' ? (
+          {step === 'loading' && (
+            <div className="modal__body"><div className="skeleton" style={{ height: 120 }} /></div>
+          )}
+
+          {step === 'payment' && (
             <div className="modal__body">
-              <PaymentStep onConfirmed={handlePaymentConfirmed} />
+              <PaymentStep
+                applicationId={applicationId}
+                userId={user.id}
+                email={user.email}
+                onConfirmed={() => setStep('form')}
+              />
             </div>
-          ) : (
+          )}
+
+          {step === 'form' && (
             <form onSubmit={handleSubmit} className="modal__body">
-              <div className="payment-step__paid-badge">
-                Payment reported via {payment?.method === 'mtn' ? 'MTN MoMo' : 'Orange Money'} — ref. {payment?.reference}
-              </div>
+              <div className="payment-step__paid-badge">Payment confirmed</div>
               <div className="field">
                 <label>Resume (PDF)</label>
                 <label className="file-input">

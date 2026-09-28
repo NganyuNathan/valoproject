@@ -4,7 +4,31 @@ export async function listInternships({ search, category, industry, location, wo
   let query = supabase.from('internships').select('*, companies(*)', { count: 'exact' }).eq('status', 'published');
 
   if (search) {
-    query = query.or(`title.ilike.%${search}%,skills_required.ilike.%${search}%`);
+    // PostgREST's `or=` syntax uses commas/parentheses as separators, so strip
+    // any the user typed to avoid breaking the filter string.
+    const term = search.trim().replace(/[,()]/g, '');
+    if (term) {
+      // Company name lives on a joined table, which PostgREST's `.or()` can't
+      // filter directly — look up matching company ids first, then include
+      // them alongside the internship's own searchable columns.
+      const { data: matchingCompanies } = await supabase
+        .from('companies')
+        .select('id')
+        .ilike('name', `%${term}%`);
+      const companyIds = (matchingCompanies || []).map((c) => c.id);
+
+      const orParts = [
+        `title.ilike.%${term}%`,
+        `skills_required.ilike.%${term}%`,
+        `departments.ilike.%${term}%`,
+        `location.ilike.%${term}%`,
+        `category.ilike.%${term}%`,
+        `description.ilike.%${term}%`,
+      ];
+      if (companyIds.length) orParts.push(`company_id.in.(${companyIds.join(',')})`);
+
+      query = query.or(orParts.join(','));
+    }
   }
   if (category) query = query.eq('category', category);
   if (industry) query = query.eq('industry', industry);

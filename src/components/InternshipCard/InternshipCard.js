@@ -47,6 +47,14 @@ export default function InternshipCard({ internship, saved, onSave, onApply, sho
         </div>
       )}
 
+      {internship.departments && (
+        <div className="internship-card__departments">
+          {String(internship.departments).split(',').map((d) => d.trim()).filter(Boolean).map((d) => (
+            <span key={d} className="chip chip--department">{d}</span>
+          ))}
+        </div>
+      )}
+
       <div className="internship-card__footer">
         <span className="internship-card__deadline">
           {deadlineDays === null ? '' : deadlineDays === 0 ? 'Closes today' : `Closes in ${deadlineDays} days`}

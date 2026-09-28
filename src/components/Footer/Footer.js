@@ -11,7 +11,7 @@ export default function Footer() {
         <div>
           <div className="footer__brand">
             <span className="navbar__mark"><HiOutlineAcademicCap /></span>
-            Valointern
+            ValoIntern
           </div>
           <p>One portal for verified placements, honest stipend information, and applications you can actually keep track of.</p>
           <div className="footer__social">
@@ -50,7 +50,7 @@ export default function Footer() {
       </div>
 
       <div className="footer__bottom container">
-        <span>© {new Date().getFullYear()} InternPath. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} ValoIntern. All rights reserved.</span>
       </div>
     </footer>
   );

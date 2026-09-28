@@ -1,19 +1,32 @@
 import { supabase } from './supabase';
 
-export async function applyToInternship({ studentId, internshipId, resumeUrl, coverLetterUrl, motivationLetter, paymentMethod, paymentReference }) {
+/**
+ * Creates the application row up front (status: 'pending', payment_status:
+ * 'unpaid') — or returns the existing one if this student already started
+ * applying to this internship. This exists so the Fapshi Edge Function has
+ * a real application id to attach the payment to *before* the student pays,
+ * and so `payment_status` only ever gets set to 'verified' by that trusted
+ * backend function (via UPDATE), never by the student directly.
+ */
+export async function createOrGetDraftApplication({ studentId, internshipId }) {
   const { data, error } = await supabase
     .from('applications')
-    .insert([{
-      student_id: studentId,
-      internship_id: internshipId,
-      resume_url: resumeUrl,
-      cover_letter_url: coverLetterUrl,
-      motivation_letter: motivationLetter,
-      status: 'pending',
-      payment_method: paymentMethod,
-      payment_reference: paymentReference,
-      payment_status: paymentReference ? 'reported' : 'unpaid',
-    }])
+    .upsert(
+      { student_id: studentId, internship_id: internshipId },
+      { onConflict: 'student_id,internship_id', ignoreDuplicates: false }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Fills in the resume/cover letter/motivation letter on an already-created application row. Never touches status or payment_status. */
+export async function updateApplicationDetails(id, { resumeUrl, coverLetterUrl, motivationLetter }) {
+  const { data, error } = await supabase
+    .from('applications')
+    .update({ resume_url: resumeUrl, cover_letter_url: coverLetterUrl, motivation_letter: motivationLetter })
+    .eq('id', id)
     .select()
     .single();
   if (error) throw error;

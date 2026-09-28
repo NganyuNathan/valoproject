@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import Filters from '../../components/Filters/Filters';
 import InternshipCard from '../../components/InternshipCard/InternshipCard';
@@ -92,15 +93,25 @@ export default function Internships() {
               </div>
               {totalPages > 1 && (
                 <div className="pagination">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      className={`pagination__btn ${filters.page === i + 1 ? 'active' : ''}`}
-                      onClick={() => fetchInternships({ page: i + 1 })}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+                  <button
+                    className="pagination__arrow"
+                    onClick={() => fetchInternships({ page: filters.page - 1 })}
+                    disabled={filters.page <= 1}
+                    aria-label="Previous page"
+                  >
+                    <HiOutlineChevronLeft />
+                  </button>
+                  <span className="pagination__label">
+                    Page {filters.page} of {totalPages}
+                  </span>
+                  <button
+                    className="pagination__arrow"
+                    onClick={() => fetchInternships({ page: filters.page + 1 })}
+                    disabled={filters.page >= totalPages}
+                    aria-label="Next page"
+                  >
+                    <HiOutlineChevronRight />
+                  </button>
                 </div>
               )}
             </>

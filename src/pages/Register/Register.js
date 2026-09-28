@@ -8,7 +8,6 @@ import { uploadFile, uploadPrivateFile, BUCKETS } from '../../services/supabase'
 import { validateRegistrationStep } from '../../utils/validators';
 import './Auth.css';
 
-const SKILLS = ['Java', 'Python', 'JavaScript', 'React', 'SQL', 'C++', 'PHP', 'Networking', 'AI', 'Machine Learning', 'UI/UX', 'Node.js'];
 const STEPS = ['account', 'education', 'documents'];
 
 const initialForm = {
@@ -19,7 +18,6 @@ const initialForm = {
   field_of_study: '',   // university only
   year_of_study: '',     // year of study (uni) or class/grade (secondary)
   graduation_year: '',   // (expected) graduation year, both
-  skills: [],
 };
 
 export default function Register() {
@@ -34,13 +32,6 @@ export default function Register() {
   const isSecondary = form.education_level === 'secondary_school';
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-  const toggleSkill = (skill) => {
-    setForm((f) => ({
-      ...f,
-      skills: f.skills.includes(skill) ? f.skills.filter((s) => s !== skill) : [...f.skills, skill],
-    }));
-  };
 
   const goNext = () => {
     const stepErrors = validateRegistrationStep(STEPS[step], form);
@@ -58,7 +49,7 @@ export default function Register() {
       const result = await registerStudent({
         email,
         password,
-        profile: { ...profile, skills: form.skills.join(',') },
+        profile,
       });
       const userId = result.user?.id;
       if (userId) {
@@ -169,17 +160,6 @@ export default function Register() {
                   </div>
                 </>
               )}
-
-              <div className="field">
-                <label>Skills</label>
-                <div className="skills-picker">
-                  {SKILLS.map((s) => (
-                    <button type="button" key={s} className={`chip skills-picker__chip ${form.skills.includes(s) ? 'active' : ''}`} onClick={() => toggleSkill(s)}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </fieldset>
           )}
 

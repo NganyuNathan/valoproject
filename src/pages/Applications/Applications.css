@@ -13,7 +13,7 @@
 }
 .file-input:hover { border-color: var(--color-forest); color: var(--color-forest); }
 
-/* ---------- Payment step (mobile money, before applying) ---------- */
+/* ---------- Payment step (Fapshi hosted checkout, before applying) ---------- */
 .payment-step { display: flex; flex-direction: column; gap: 16px; }
 .payment-step__amount {
   display: flex; align-items: center; justify-content: space-between;
@@ -22,16 +22,26 @@
 .payment-step__amount span { font-size: 0.85rem; color: var(--color-text-muted); }
 .payment-step__amount strong { font-family: var(--font-display); font-size: 1.3rem; color: var(--color-forest); }
 .payment-step__help { font-size: 0.85rem; margin: 0; }
-.payment-step__notice {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md);
-  background: #fdf0dc; color: #a4650f; font-size: 0.82rem; line-height: 1.4;
+.payment-step__pay-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+.payment-step__status {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 18px; font-size: 0.88rem; color: var(--color-text-muted);
 }
-.payment-step__notice svg { flex-shrink: 0; font-size: 1.1rem; margin-top: 1px; }
-.payment-step__buttons { display: flex; flex-direction: column; gap: 10px; }
-.payment-step__method { justify-content: flex-start; gap: 10px; padding: 14px 16px; }
-.payment-step__confirm {
-  display: flex; flex-direction: column; gap: 4px; padding-top: 14px; border-top: 1px solid var(--color-line-soft);
+.payment-step__spinner {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--color-line); border-top-color: var(--color-forest);
+  animation: payment-spin 0.7s linear infinite;
 }
+@keyframes payment-spin { to { transform: rotate(360deg); } }
+
+.payment-step__result {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 20px; border-radius: var(--radius-md); text-align: center; font-size: 0.88rem;
+}
+.payment-step__result--failed { background: #fbe9e5; color: var(--color-danger); }
+.payment-step__result svg { font-size: 1.6rem; }
+
 .payment-step__paid-badge {
   font-size: 0.8rem; font-weight: 600; color: var(--color-success); background: #e3f6ea;
   padding: 8px 14px; border-radius: var(--radius-pill); margin-bottom: 6px; display: inline-block; width: fit-content;

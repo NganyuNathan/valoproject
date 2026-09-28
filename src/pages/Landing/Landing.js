@@ -94,7 +94,7 @@ export default function Landing() {
       {/* Features */}
       <section className="section">
         <div className="container">
-          <h2 className="section__title">Why students use VALOINERN</h2>
+          <h2 className="section__title">Why students use ValoIntern</h2>
           <div className="features-grid">
             {FEATURES.map((f) => (
               <motion.div key={f.title} className="card feature-card" whileHover={{ y: -4 }}>

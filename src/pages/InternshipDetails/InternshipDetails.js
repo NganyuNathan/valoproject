@@ -60,18 +60,6 @@ export default function InternshipDetails() {
       </div>
 
       <div className="internship-details__body">
-        {(internship.image_1_url || internship.image_2_url) && (
-          <section>
-            <div className="internship-details__gallery">
-              {internship.image_1_url && (
-                <img src={internship.image_1_url} alt={internship.title} />
-              )}
-              {internship.image_2_url && (
-                <img src={internship.image_2_url} alt={`${internship.title} 2`} />
-              )}
-            </div>
-          </section>
-        )}
         <section>
           <h2>About this internship</h2>
           <p>{internship.description}</p>
@@ -111,6 +99,20 @@ export default function InternshipDetails() {
       </div>
 
       {applying && <ApplicationModal internship={internship} onClose={() => setApplying(false)} />}
+
+      {(internship.image_1_url || internship.image_2_url) && (
+          <section>
+            <div className="internship-details__gallery">
+              {internship.image_1_url && (
+                <img src={internship.image_1_url} alt={internship.title} />
+              )}
+              {internship.image_2_url && (
+                <img src={internship.image_2_url} alt={`${internship.title} 2`} />
+              )}
+            </div>
+          </section>
+        )}
+
     </div>
   );
 }
