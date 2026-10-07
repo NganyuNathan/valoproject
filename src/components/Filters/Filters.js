@@ -1,7 +1,7 @@
 import React from 'react';
 import './Filters.css';
 
-const CATEGORIES = ['Software Engineering', 'Web Development', 'Mobile Development', 'Data Science', 'Artificial Intelligence', 'Cybersecurity', 'Networking', 'Cloud Computing', 'Finance', 'Accounting', 'Marketing', 'Graphic Design', 'Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering'];
+const CATEGORIES = ['Journalism', 'Computer Engineering', 'Mining Engineering', 'Food and Agricultural Sciences', 'Commercial Departments', 'Health Science', 'General', 'Plumbing', 'Finance', 'Accounting', 'Marketing', 'Graphic Design', 'Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering','Woodwork','Fashion Designing'];
 const WORK_MODES = ['remote', 'hybrid', 'onsite'];
 
 function Select({ label, value, onChange, options }) {
