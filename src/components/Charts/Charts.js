@@ -53,7 +53,7 @@ export function ApplicationStatusChart({ labels, data }) {
       <Doughnut
         data={{
           labels,
-          datasets: [{ data, backgroundColor: [GREEN, MINT, AMBER, '#c1462f', '#8a9690'], borderWidth: 0 }],
+          datasets: [{ data, backgroundColor: [GREEN, MINT, AMBER, '#285ba6', '#6b34b0', '#c1462f'], borderWidth: 0 }],
         }}
         options={{ ...baseOptions, scales: undefined, cutout: '65%' }}
       />

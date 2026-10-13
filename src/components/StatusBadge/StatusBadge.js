@@ -2,6 +2,8 @@ import React from 'react';
 import './StatusBadge.css';
 
 const LABELS = {
+  unpaid: 'Awaiting payment',
+  paid: 'Paid',
   pending: 'Pending',
   under_review: 'Under Review',
   interview_scheduled: 'Interview Scheduled',

@@ -11,9 +11,12 @@ export async function registerStudent({ email, password, profile }) {
 
   const userId = data.user?.id;
   if (userId) {
+    // upsert (not insert): the handle_new_user database trigger may already have
+    // created a bare profile row for this user, and a plain insert would then
+    // fail with a duplicate-key error.
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert([{ id: userId, role: 'student', email, ...profile }]);
+      .upsert([{ id: userId, role: 'student', email, ...profile }], { onConflict: 'id' });
     if (profileError) throw profileError;
   }
   return data;

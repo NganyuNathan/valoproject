@@ -24,10 +24,10 @@ export default function AdminDashboard() {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('companies').select('*', { count: 'exact', head: true }),
         supabase.from('internships').select('*', { count: 'exact', head: true }),
-        supabase.from('applications').select('*', { count: 'exact', head: true }),
-        supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('applications').select('*', { count: 'exact', head: true }).neq('status', 'unpaid'),
+        supabase.from('applications').select('*', { count: 'exact', head: true }).in('status', ['paid', 'pending']),
         supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'accepted'),
-        supabase.from('applications').select('applied_at'),
+        supabase.from('applications').select('applied_at').neq('status', 'unpaid'),
         supabase.from('internships').select('category'),
       ]);
       setStats({ students, companies, internships, totalApps, pending, accepted });

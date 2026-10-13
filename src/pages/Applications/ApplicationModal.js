@@ -21,7 +21,7 @@ export default function ApplicationModal({ internship, onClose }) {
   // Create (or resume) the application row as soon as the modal opens, so
   // there's a real application id for Fapshi to attach the payment to.
   // Nothing about the student's documents gets written yet — just the bare
-  // row (status: pending, payment: unpaid).
+  // row (status: unpaid, payment: unpaid) — it only becomes a real, visible application once Fapshi confirms payment.
   useEffect(() => {
     let cancelled = false;
     createOrGetDraftApplication({ studentId: user.id, internshipId: internship.id })

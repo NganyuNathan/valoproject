@@ -54,10 +54,12 @@ export default function StudentDashboard() {
     }).finally(() => setLoading(false));
   }, [profile]);
 
+  // Only paid applications count as submitted; unpaid ones are just unfinished drafts.
+  const submitted = applications.filter((a) => a.status !== 'unpaid');
   const interviews = applications.filter((a) => a.status === 'interview_scheduled').length;
-  const { labels, counts } = monthlyBuckets(applications);
+  const { labels, counts } = monthlyBuckets(submitted);
 
-  const statusCounts = ['pending', 'under_review', 'interview_scheduled', 'accepted', 'rejected'].map(
+  const statusCounts = ['paid', 'pending', 'under_review', 'interview_scheduled', 'accepted', 'rejected'].map(
     (s) => applications.filter((a) => a.status === s).length
   );
 
@@ -69,7 +71,7 @@ export default function StudentDashboard() {
       <div className="stat-grid">
         <StatCard icon={<HiOutlineBriefcase />} label="Available internships" value={loading ? '—' : availableCount} />
         <StatCard icon={<HiOutlineBookmark />} label="Saved opportunities" value={loading ? '—' : savedCount} />
-        <StatCard icon={<HiOutlineClipboardList />} label="Applications submitted" value={loading ? '—' : applications.length} />
+        <StatCard icon={<HiOutlineClipboardList />} label="Applications submitted" value={loading ? '—' : submitted.length} />
         <StatCard icon={<HiOutlineCalendar />} label="Interviews scheduled" value={loading ? '—' : interviews} />
       </div>
 
@@ -80,7 +82,7 @@ export default function StudentDashboard() {
         </div>
         <div className="card chart-card">
           <h3>Application status</h3>
-          <ApplicationStatusChart labels={['Pending', 'Under Review', 'Interview', 'Accepted', 'Rejected']} data={statusCounts} />
+          <ApplicationStatusChart labels={['Paid', 'Pending', 'Under Review', 'Interview', 'Accepted', 'Rejected']} data={statusCounts} />
         </div>
       </div>
     </div>

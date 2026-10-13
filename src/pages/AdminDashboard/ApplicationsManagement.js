@@ -6,9 +6,9 @@ import { getSignedUrl, BUCKETS } from '../../services/supabase';
 import { formatDate } from '../../utils/formatters';
 import './AdminTables.css';
 
-const STATUSES = ['pending', 'under_review', 'interview_scheduled', 'accepted', 'rejected'];
+const STATUSES = ['paid', 'pending', 'under_review', 'interview_scheduled', 'accepted', 'rejected'];
 
-const PAYMENT_LABELS = { unpaid: 'Unpaid', reported: 'Reported — needs check', verified: 'Verified', rejected: 'Rejected' };
+const PAYMENT_LABELS = { unpaid: 'Unpaid', reported: 'Reported — needs check', verified: 'Paid', rejected: 'Rejected' };
 
 function PaymentBadge({ status }) {
   return <span className={`payment-badge payment-badge--${status}`}>{PAYMENT_LABELS[status] || status}</span>;

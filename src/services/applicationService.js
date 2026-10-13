@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 /**
- * Creates the application row up front (status: 'pending', payment_status:
+ * Creates the application row up front (status: 'unpaid', payment_status:
  * 'unpaid') — or returns the existing one if this student already started
  * applying to this internship. This exists so the Fapshi Edge Function has
  * a real application id to attach the payment to *before* the student pays,
@@ -59,6 +59,7 @@ export async function listAllApplications({ status, search } = {}) {
   let query = supabase
     .from('applications')
     .select('*, internships(title, company_id, companies(name)), profiles(first_name, last_name, email)')
+    .neq('status', 'unpaid') // unpaid drafts are not submitted applications; admins never see them
     .order('applied_at', { ascending: false });
 
   if (status) query = query.eq('status', status);
