@@ -46,6 +46,27 @@ export async function listInternships({ search, category, industry, location, wo
   return { data, count };
 }
 
+/**
+ * Admin-only: every internship ever added, whatever its status (published,
+ * draft or archived). Supabase returns at most 1000 rows per request, so this
+ * keeps asking for the next batch until there's nothing left — there is no cap.
+ */
+export async function listAllInternshipsForAdmin() {
+  const BATCH = 1000;
+  let all = [];
+  for (let from = 0; ; from += BATCH) {
+    const { data, error } = await supabase
+      .from('internships')
+      .select('*, companies(id, name)')
+      .order('created_at', { ascending: false })
+      .range(from, from + BATCH - 1);
+    if (error) throw error;
+    all = all.concat(data || []);
+    if (!data || data.length < BATCH) break;
+  }
+  return all;
+}
+
 export async function getInternshipById(id) {
   const { data, error } = await supabase
     .from('internships')

@@ -4,6 +4,6 @@
  * supabase/functions/fapshi-payment. This file just holds the fee amount.
  */
 export const PAYMENT_CONFIG = {
-  amount: 300, // FCFA
+  amount: 250, // FCFA
   currency: 'FCFA',
 };

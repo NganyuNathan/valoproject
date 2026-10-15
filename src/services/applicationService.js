@@ -45,6 +45,19 @@ export async function updatePaymentStatus(id, paymentStatus) {
   return data;
 }
 
+/**
+ * Admin: permanently deletes a student's application.
+ * A blocked delete (missing permission) doesn't raise an error in Supabase — it
+ * just deletes 0 rows — so we check that a row really went away.
+ */
+export async function deleteApplication(id) {
+  const { data, error } = await supabase.from('applications').delete().eq('id', id).select('id');
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Could not delete this application. Check that the admin delete policy exists in Supabase.');
+  }
+}
+
 export async function listMyApplications(studentId) {
   const { data, error } = await supabase
     .from('applications')

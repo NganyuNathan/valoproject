@@ -124,3 +124,16 @@
 @media (max-width: 480px) {
   .internship-image-row { flex-direction: column; }
 }
+
+/* Admin list extras: result count, empty message, prev/next pager */
+.admin-count { font-size: 1rem; font-weight: 500; color: var(--color-text-faint); }
+.admin-empty { padding: 28px; text-align: center; color: var(--color-text-muted); margin: 0; }
+.admin-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; }
+.admin-pager .pagination__arrow {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-line);
+  background: var(--color-white); color: var(--color-forest); font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.admin-pager .pagination__arrow:hover:not(:disabled) { background: var(--color-mint-50); border-color: var(--color-forest); }
+.admin-pager .pagination__arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+.admin-pager .pagination__label { font-size: 0.88rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }

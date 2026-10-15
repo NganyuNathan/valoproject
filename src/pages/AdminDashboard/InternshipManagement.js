@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineArchive, HiOutlineUpload, HiOutlineX } from 'react-icons/hi';
-import { listInternships, createInternship, updateInternship, deleteInternship, setInternshipStatus } from '../../services/internshipService';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineArchive, HiOutlineUpload, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
+import { listAllInternshipsForAdmin, createInternship, updateInternship, deleteInternship, setInternshipStatus } from '../../services/internshipService';
 import { listCompanies } from '../../services/companyService';
 import { uploadFile, BUCKETS } from '../../services/supabase';
 import './AdminTables.css';
+
+const PAGE_SIZE = 25;
 
 const emptyForm = { company_id: '', title: '', description: '', responsibilities: '', requirements: '', skills_required: '', departments: '', salary: '', location: '', internship_type: 'remote', duration: '', category: '', deadline: '', status: 'published', image_1_url: '', image_2_url: '' };
 
@@ -16,11 +18,14 @@ export default function InternshipManagement() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(null); // '1' | '2' | null
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   const load = () => {
     setLoading(true);
-    Promise.all([listInternships({ pageSize: 100 }), listCompanies()])
-      .then(([{ data }, comps]) => { setItems(data || []); setCompanies(comps || []); })
+    Promise.all([listAllInternshipsForAdmin(), listCompanies()])
+      .then(([all, comps]) => { setItems(all || []); setCompanies(comps || []); })
+      .catch((err) => toast.error(err.message || 'Could not load internships'))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -82,19 +87,42 @@ export default function InternshipManagement() {
     try { await setInternshipStatus(id, status === 'archived' ? 'published' : 'archived'); toast.success('Status updated'); load(); } catch (err) { toast.error(err.message); }
   };
 
+  // Search across title, company, category, location, departments and status.
+  const term = search.trim().toLowerCase();
+  const filtered = term
+    ? items.filter((i) =>
+        [i.title, i.companies?.name, i.category, i.location, i.departments, i.status]
+          .some((v) => String(v || '').toLowerCase().includes(term)))
+    : items;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const rangeStart = filtered.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
+
   return (
     <div>
       <div className="admin-header">
-        <h1>Internship management</h1>
+        <h1>Internship management <span className="admin-count">({items.length})</span></h1>
         <button className="btn btn-primary" onClick={openNew}><HiOutlinePlus /> Add internship</button>
       </div>
 
+      <div className="admin-toolbar">
+        <input
+          className="input"
+          placeholder="Search by title, company, category, location, status…"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        />
+      </div>
+
       {loading ? <div className="skeleton" style={{ height: 300 }} /> : (
+        <>
         <div className="card admin-table-wrap">
           <table className="table">
             <thead><tr><th>Title</th><th>Company</th><th>Category</th><th>Status</th><th>Deadline</th><th></th></tr></thead>
             <tbody>
-              {items.map((i) => (
+              {pageItems.map((i) => (
                 <tr key={i.id}>
                   <td>{i.title}</td>
                   <td>{i.companies?.name}</td>
@@ -110,7 +138,17 @@ export default function InternshipManagement() {
               ))}
             </tbody>
           </table>
+          {pageItems.length === 0 && <p className="admin-empty">No internships match your search.</p>}
         </div>
+
+        {filtered.length > PAGE_SIZE && (
+          <div className="admin-pager">
+            <button className="pagination__arrow" onClick={() => setPage(currentPage - 1)} disabled={currentPage <= 1} aria-label="Previous page"><HiOutlineChevronLeft /></button>
+            <span className="pagination__label">{rangeStart}–{rangeEnd} of {filtered.length}</span>
+            <button className="pagination__arrow" onClick={() => setPage(currentPage + 1)} disabled={currentPage >= totalPages} aria-label="Next page"><HiOutlineChevronRight /></button>
+          </div>
+        )}
+        </>
       )}
 
       {showForm && (

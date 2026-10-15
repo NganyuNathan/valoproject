@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { HiOutlineDownload, HiOutlineDocumentText, HiOutlineMail, HiOutlineCheck, HiOutlineX } from 'react-icons/hi';
-import { listAllApplications, updateApplicationStatus, updatePaymentStatus, applicationsToCSV } from '../../services/applicationService';
+import { HiOutlineDownload, HiOutlineDocumentText, HiOutlineMail, HiOutlineCheck, HiOutlineX, HiOutlineTrash } from 'react-icons/hi';
+import { listAllApplications, updateApplicationStatus, updatePaymentStatus, deleteApplication, applicationsToCSV } from '../../services/applicationService';
 import { getSignedUrl, BUCKETS } from '../../services/supabase';
 import { formatDate } from '../../utils/formatters';
 import './AdminTables.css';
@@ -33,6 +33,19 @@ export default function ApplicationsManagement() {
 
   const handlePaymentVerify = async (id, paymentStatus) => {
     try { await updatePaymentStatus(id, paymentStatus); toast.success('Payment status updated'); load(); } catch (err) { toast.error(err.message); }
+  };
+
+  const handleDelete = async (a) => {
+    const who = `${a.profiles?.first_name || ''} ${a.profiles?.last_name || ''}`.trim() || 'this student';
+    const what = a.internships?.title || 'this internship';
+    if (!window.confirm(`Permanently delete ${who}'s application for "${what}"?\n\nThis can't be undone. Any payment they made is not refunded.`)) return;
+    try {
+      await deleteApplication(a.id);
+      setApplications((prev) => prev.filter((x) => x.id !== a.id));
+      toast.success('Application deleted');
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   const handleViewDocument = async (bucket, pathOrUrl, label) => {
@@ -76,7 +89,7 @@ export default function ApplicationsManagement() {
       {loading ? <div className="skeleton" style={{ height: 300 }} /> : (
         <div className="card admin-table-wrap">
           <table className="table">
-            <thead><tr><th>Student</th><th>Internship</th><th>Applied</th><th>Documents</th><th>Payment</th><th>Status</th></tr></thead>
+            <thead><tr><th>Student</th><th>Internship</th><th>Applied</th><th>Documents</th><th>Payment</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {applications.map((a) => (
                 <tr key={a.id}>
@@ -123,6 +136,9 @@ export default function ApplicationsManagement() {
                     <select className="input" style={{ padding: '6px 10px' }} value={a.status} onChange={(e) => handleStatusChange(a.id, e.target.value)}>
                       {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
                     </select>
+                  </td>
+                  <td className="admin-table__actions">
+                    <button onClick={() => handleDelete(a)} aria-label="Delete application" title="Delete application"><HiOutlineTrash /></button>
                   </td>
                 </tr>
               ))}
