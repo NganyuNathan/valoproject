@@ -76,7 +76,12 @@ async function initiatePay(args: { email?: string; externalId: string; userId: s
 
 /** Asks Fapshi itself for the real status of a transaction. We never trust a status sent to us. */
 async function getPaymentStatus(transId: string) {
-  const res = await fetch(`${FAPSHI_BASE_URL}/payment-status/${transId}`, { headers: fapshiHeaders });
+  // transId comes from the request (or an unauthenticated webhook), so make sure it's a plain
+  // id before it goes into a URL — otherwise something like "../balance" could reach other endpoints.
+  if (typeof transId !== 'string' || !/^[A-Za-z0-9_-]{3,64}$/.test(transId)) {
+    throw new Error('Invalid transaction id.');
+  }
+  const res = await fetch(`${FAPSHI_BASE_URL}/payment-status/${encodeURIComponent(transId)}`, { headers: fapshiHeaders });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || `Fapshi payment-status failed: ${res.status}`);
   return data; // { transId, status, externalId, ... }

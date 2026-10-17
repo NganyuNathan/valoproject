@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { HiOutlineAcademicCap, HiOutlineUpload } from 'react-icons/hi';
-import { registerStudent, updateProfile } from '../../services/authService';
-import { uploadFile, uploadPrivateFile, BUCKETS } from '../../services/supabase';
+import { HiOutlineAcademicCap, HiOutlineMail } from 'react-icons/hi';
+import { registerStudent, resendConfirmation } from '../../services/authService';
 import { validateRegistrationStep } from '../../utils/validators';
 import './Auth.css';
 
-const STEPS = ['account', 'education', 'documents'];
+const STEPS = ['account', 'education'];
 
 const initialForm = {
   first_name: '', last_name: '', email: '', password: '', confirm_password: '', phone: '',
@@ -24,9 +23,9 @@ export default function Register() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
-  const [photoFile, setPhotoFile] = useState(null);
-  const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sentTo, setSentTo] = useState(null); // email address once the confirmation email has been sent
+  const [resending, setResending] = useState(false);
   const navigate = useNavigate();
 
   const isSecondary = form.education_level === 'secondary_school';
@@ -41,37 +40,56 @@ export default function Register() {
   };
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await resendConfirmation(sentTo);
+      toast.success('Confirmation email sent again');
+    } catch (err) {
+      toast.error(err.message || 'Could not resend the email');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const { password, confirm_password, email, ...profile } = form;
-      const result = await registerStudent({
-        email,
-        password,
-        profile,
-      });
-      const userId = result.user?.id;
-      if (userId) {
-        const profileUpdates = {};
-        if (photoFile) {
-          profileUpdates.profile_photo = await uploadFile(BUCKETS.AVATARS, `${userId}/photo-${Date.now()}`, photoFile);
-        }
-        if (resumeFile) {
-          profileUpdates.resume_url = await uploadPrivateFile(BUCKETS.RESUMES, `${userId}/resume-${Date.now()}`, resumeFile);
-        }
-        if (Object.keys(profileUpdates).length) {
-          await updateProfile(userId, profileUpdates);
-        }
+      const result = await registerStudent({ email, password, profile });
+      if (result.session) {
+        // Only happens if email confirmation is switched off in Supabase.
+        toast.success('Account created!');
+        navigate('/dashboard');
+      } else {
+        setSentTo(email);
       }
-      toast.success('Account created! Check your email to confirm.');
-      navigate('/login');
     } catch (err) {
       toast.error(err.message || 'Could not create account');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (sentTo) {
+    return (
+      <div className="auth-page">
+        <motion.div className="card auth-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="auth-card__brand"><HiOutlineMail /></div>
+          <h1>Check your email</h1>
+          <p className="auth-card__subtitle">
+            We sent a confirmation link to <strong>{sentTo}</strong>. Click it to activate your account — you won't be able to sign in until you do.
+          </p>
+          <p className="field-hint" style={{ marginBottom: 16 }}>Can't see it? Check your spam folder.</p>
+          <button className="btn btn-outline btn-block" onClick={handleResend} disabled={resending}>
+            {resending ? 'Sending…' : 'Resend confirmation email'}
+          </button>
+          <p className="auth-card__footer">Already confirmed? <Link to="/login">Sign in</Link></p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">
@@ -160,20 +178,6 @@ export default function Register() {
                   </div>
                 </>
               )}
-            </fieldset>
-          )}
-
-          {step === 2 && (
-            <fieldset>
-              <legend>Documents</legend>
-              <div className="field">
-                <label>Profile photo (optional)</label>
-                <label className="file-input"><HiOutlineUpload />{photoFile ? photoFile.name : 'Choose an image'}<input type="file" accept="image/*" className="visually-hidden" onChange={(e) => setPhotoFile(e.target.files[0])} /></label>
-              </div>
-              <div className="field">
-                <label>Resume (optional{isSecondary ? ' — most secondary students don\'t have one yet' : ''})</label>
-                <label className="file-input"><HiOutlineUpload />{resumeFile ? resumeFile.name : 'Choose a PDF'}<input type="file" accept="application/pdf" className="visually-hidden" onChange={(e) => setResumeFile(e.target.files[0])} /></label>
-              </div>
             </fieldset>
           )}
 

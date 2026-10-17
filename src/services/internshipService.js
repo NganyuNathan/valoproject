@@ -6,7 +6,7 @@ export async function listInternships({ search, category, industry, location, wo
   if (search) {
     // PostgREST's `or=` syntax uses commas/parentheses as separators, so strip
     // any the user typed to avoid breaking the filter string.
-    const term = search.trim().replace(/[,()]/g, '');
+    const term = search.trim().replace(/[,()"\\]/g, '');
     if (term) {
       // Company name lives on a joined table, which PostgREST's `.or()` can't
       // filter directly — look up matching company ids first, then include
