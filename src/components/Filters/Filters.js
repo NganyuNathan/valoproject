@@ -1,7 +1,7 @@
 import React from 'react';
 import './Filters.css';
 
-const CATEGORIES = ['Software Engineering', 'Web Development', 'Mobile Development', 'Data Science', 'Artificial Intelligence', 'Cybersecurity', 'Networking', 'Cloud Computing', 'Finance', 'Accounting', 'Marketing', 'Graphic Design', 'Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering'];
+const CATEGORIES = ['journalism', 'Mining Engineering', 'Computer Engineering', 'Food and Agricultural Sciences', 'Commercial Departments', 'Health Science', 'Petroleum Engineering', 'Woodwork', 'Finance', 'Accounting', 'Marketing', 'Fashion Designing', 'Mechanical Engineering', 'Electrical Engineering','Plumbing','General', 'Civil Engineering','Health and Safety'];
 const WORK_MODES = ['remote', 'hybrid', 'onsite'];
 
 function Select({ label, value, onChange, options }) {
@@ -27,7 +27,7 @@ export default function Filters({ filters, onChange, onReset }) {
         <h3>Filters</h3>
         <button className="btn-ghost btn-sm" onClick={onReset}>Reset</button>
       </div>
-      <Select label="Category" value={filters.category} onChange={set('category')} options={CATEGORIES} />
+      <Select label="Department" value={filters.category} onChange={set('category')} options={CATEGORIES} />
       <Select label="Work mode" value={filters.workMode} onChange={set('workMode')} options={WORK_MODES} />
       <div className="field filters__field">
         <label>Location</label>
