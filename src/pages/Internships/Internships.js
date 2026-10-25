@@ -6,14 +6,14 @@ import SearchBar from '../../components/SearchBar/SearchBar';
 import Filters from '../../components/Filters/Filters';
 import InternshipCard from '../../components/InternshipCard/InternshipCard';
 import ApplicationModal from '../Applications/ApplicationModal';
-import { useInternships } from '../../context/InternshipContext';
+import { useInternships, DEFAULT_FILTERS } from '../../context/InternshipContext';
 import { useAuth } from '../../context/AuthContext';
 import { saveInternship, unsaveInternship } from '../../services/internshipService';
 import './Internships.css';
 
 export default function Internships() {
   const [searchParams] = useSearchParams();
-  const { filters, internships, total, loading, fetchInternships, updateFilters, resetFilters } = useInternships();
+  const { filters, internships, total, loading, error, fetchInternships, updateFilters, resetFilters } = useInternships();
   const { isAuthenticated, user } = useAuth();
   const [savedIds, setSavedIds] = useState(new Set());
   const [applyTarget, setApplyTarget] = useState(null);
@@ -25,6 +25,10 @@ export default function Internships() {
     fetchInternships(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
 
   const handleSave = useCallback(async (internship) => {
     if (!isAuthenticated) {
@@ -64,13 +68,17 @@ export default function Internships() {
         <p>{total} opportunit{total === 1 ? 'y' : 'ies'} open to applications.</p>
       </div>
 
-      <SearchBar defaultValue={filters.search} onSearch={(q) => fetchInternships({ search: q, page: 1 })} />
+      <SearchBar
+        live
+        defaultValue={filters.search}
+        placeholder="Search by title, company, department, skill, location, duration, work mode..."
+        onSearch={(q) => fetchInternships({ search: q, page: 1 })} />
 
       <div className="internships-page__body">
         <Filters
           filters={filters}
-          onChange={(patch) => { updateFilters(patch); fetchInternships(patch); }}
-          onReset={() => { resetFilters(); fetchInternships({ search: '', category: '', industry: '', location: '', workMode: '', paid: '', duration: '', page: 1 }); }}
+          onChange={(patch) => { updateFilters(patch); fetchInternships({ ...patch, page: 1 }); }}
+          onReset={() => { resetFilters(); fetchInternships({ ...DEFAULT_FILTERS }); }}
         />
 
         <div className="internships-page__results">
