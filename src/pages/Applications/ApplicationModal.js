@@ -8,6 +8,8 @@ import { uploadPrivateFile, BUCKETS } from '../../services/supabase';
 import PaymentStep from './PaymentStep';
 import './Applications.css';
 
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024; // 10 MB per document
+
 export default function ApplicationModal({ internship, onClose }) {
   const { user, profile } = useAuth();
   const [step, setStep] = useState('loading'); // 'loading' | 'form' | 'payment' | 'finishing'
@@ -15,7 +17,7 @@ export default function ApplicationModal({ internship, onClose }) {
   const [alreadyPaid, setAlreadyPaid] = useState(false); // handles reopening a draft that was already paid for
   const [resumeFile, setResumeFile] = useState(null);
   const [coverLetterFile, setCoverLetterFile] = useState(null);
-  const [motivation, setMotivation] = useState('');
+  const [documents, setDocuments] = useState([]); // extra files the student attaches
   const [formError, setFormError] = useState(null);
 
   // Create (or resume) the application row as soon as the modal opens, so
@@ -40,8 +42,8 @@ export default function ApplicationModal({ internship, onClose }) {
   }, [internship.id, user.id]);
 
   /**
-   * Actually uploads the resume/cover letter and saves them, along with the
-   * motivation letter, to the application row. Only ever called once payment
+   * Actually uploads the resume, cover letter and any extra documents and
+   * saves them to the application row. Only ever called once payment
    * has been confirmed (or was already confirmed in an earlier session) —
    * nothing is written to storage or the database before that.
    */
@@ -56,10 +58,38 @@ export default function ApplicationModal({ internship, onClose }) {
       coverLetterUrl = await uploadPrivateFile(BUCKETS.COVER_LETTERS, `${user.id}/${Date.now()}-${coverLetterFile.name}`, coverLetterFile);
     }
 
+    // Extra documents: uploaded to the same private bucket as the resume, under
+    // the student's own folder. Only the storage paths are saved in the database.
+    let uploadedDocuments;
+    if (documents.length > 0) {
+      const stamp = Date.now();
+      uploadedDocuments = await Promise.all(
+        documents.map(async (file, i) => {
+          const safeName = file.name.replace(/[^\w.\-]+/g, '_');
+          const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/documents/${stamp}-${i}-${safeName}`, file);
+          return { name: file.name, path };
+        })
+      );
+    }
+
     await updateApplicationDetails(applicationId, {
-      resumeUrl, coverLetterUrl, motivationLetter: motivation,
+      resumeUrl, coverLetterUrl, documents: uploadedDocuments,
     });
   };
+
+  // Adds newly chosen files to the list (skipping exact duplicates).
+  const handleAddDocuments = (e) => {
+    const chosen = Array.from(e.target.files || []);
+    setDocuments((prev) => {
+      const next = [...prev];
+      chosen.forEach((f) => {
+        if (!next.some((x) => x.name === f.name && x.size === f.size)) next.push(f);
+      });
+      return next;
+    });
+    e.target.value = ''; // lets the same file be chosen again after removing it
+  };
+  const handleRemoveDocument = (index) => setDocuments((prev) => prev.filter((_, i) => i !== index));
 
   // Step 1: just validate and hold onto the documents in memory — nothing is
   // uploaded yet. If payment was already done in an earlier session, there's
@@ -68,6 +98,11 @@ export default function ApplicationModal({ internship, onClose }) {
     e.preventDefault();
     if (!resumeFile && !profile?.resume_url) {
       setFormError('Please attach a resume');
+      return;
+    }
+    const tooBig = documents.find((f) => f.size > MAX_DOCUMENT_BYTES);
+    if (tooBig) {
+      setFormError(`"${tooBig.name}" is larger than 10 MB. Please choose a smaller file.`);
       return;
     }
     setFormError(null);
@@ -140,15 +175,36 @@ export default function ApplicationModal({ internship, onClose }) {
                 </label>
               </div>
               <div className="field">
-                <label>Short motivation letter</label>
-                <textarea
-                  className="input"
-                  rows={5}
-                  placeholder="Tell the team why you're a great fit..."
-                  value={motivation}
-                  onChange={(e) => setMotivation(e.target.value)}
-                  required
-                />
+                <label>Upload listed documents</label>
+                <label className="file-input">
+                  <HiOutlineUpload />
+                  {documents.length > 0 ? 'Add more documents' : 'Choose files (you can select several)'}
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={handleAddDocuments}
+                    className="visually-hidden"
+                  />
+                </label>
+                {documents.length > 0 && (
+                  <ul className="doc-list">
+                    {documents.map((f, i) => (
+                      <li key={`${f.name}-${f.size}`} className="doc-list__item">
+                        <span className="doc-list__name" title={f.name}>{f.name}</span>
+                        <button
+                          type="button"
+                          className="doc-list__remove"
+                          onClick={() => handleRemoveDocument(i)}
+                          aria-label={`Remove ${f.name}`}
+                        >
+                          <HiOutlineX />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="field-hint">PDF, Word or image files, 2MB each</div>
               </div>
               {formError && <div className="field-error" style={{ marginBottom: 8 }}>{formError}</div>}
               {!alreadyPaid && (

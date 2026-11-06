@@ -113,6 +113,21 @@ export default function ApplicationsManagement() {
                     >
                       <HiOutlineMail />
                     </button>
+                    {Array.isArray(a.documents) && a.documents.length > 0 && (
+                      <div style={{ flexBasis: '100%', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                        {a.documents.map((d) => (
+                          <button
+                            key={d.path}
+                            type="button"
+                            onClick={() => handleViewDocument(BUCKETS.RESUMES, d.path, 'document')}
+                            title={`Open ${d.name}`}
+                            style={{ fontSize: '0.75rem', textDecoration: 'underline', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          >
+                            {d.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <PaymentBadge status={a.payment_status || 'unpaid'} />

@@ -21,11 +21,18 @@ export async function createOrGetDraftApplication({ studentId, internshipId }) {
   return data;
 }
 
-/** Fills in the resume/cover letter/motivation letter on an already-created application row. Never touches status or payment_status. */
-export async function updateApplicationDetails(id, { resumeUrl, coverLetterUrl, motivationLetter }) {
+/**
+ * Fills in the resume, cover letter and any extra documents on an
+ * already-created application row. `documents` is a list of { name, path } and
+ * is only written when the student attached some. Never touches status or payment_status.
+ */
+export async function updateApplicationDetails(id, { resumeUrl, coverLetterUrl, documents }) {
+  const changes = { resume_url: resumeUrl, cover_letter_url: coverLetterUrl };
+  if (documents && documents.length > 0) changes.documents = documents;
+
   const { data, error } = await supabase
     .from('applications')
-    .update({ resume_url: resumeUrl, cover_letter_url: coverLetterUrl, motivation_letter: motivationLetter })
+    .update(changes)
     .eq('id', id)
     .select()
     .single();

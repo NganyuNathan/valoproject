@@ -13,6 +13,16 @@
 }
 .file-input:hover { border-color: var(--color-forest); color: var(--color-forest); }
 
+/* List of chosen extra documents in the apply form */
+.doc-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.doc-list__item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; border-radius: var(--radius-md); background: var(--color-mint-50); font-size: 0.85rem;
+}
+.doc-list__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-list__remove { display: inline-flex; background: none; border: 0; cursor: pointer; color: var(--color-text-muted); font-size: 1rem; }
+.doc-list__remove:hover { color: var(--color-forest); }
+
 /* ---------- Payment step (Fapshi hosted checkout, before applying) ---------- */
 .payment-step { display: flex; flex-direction: column; gap: 16px; }
 .payment-step__amount {
