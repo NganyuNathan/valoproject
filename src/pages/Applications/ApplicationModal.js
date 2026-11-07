@@ -65,7 +65,7 @@ export default function ApplicationModal({ internship, onClose }) {
       const stamp = Date.now();
       uploadedDocuments = await Promise.all(
         documents.map(async (file, i) => {
-          const safeName = file.name.replace(/[^\w.\-]+/g, '_');
+          const safeName = file.name.replace(/[^\w.-]+/g, '_');
           const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/documents/${stamp}-${i}-${safeName}`, file);
           return { name: file.name, path };
         })
