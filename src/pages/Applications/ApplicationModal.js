@@ -175,7 +175,7 @@ export default function ApplicationModal({ internship, onClose }) {
                 </label>
               </div>
               <div className="field">
-                <label>Upload listed documents</label>
+                <label>Upload documents as listed in the requirements</label>
                 <label className="file-input">
                   <HiOutlineUpload />
                   {documents.length > 0 ? 'Add more documents' : 'Choose files (you can select several)'}
