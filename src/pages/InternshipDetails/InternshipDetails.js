@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import ApplicationModal from '../Applications/ApplicationModal';
 import { formatCurrency, formatDate, initials } from '../../utils/formatters';
 import './InternshipDetails.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function InternshipDetails() {
   const { id } = useParams();
@@ -28,7 +29,7 @@ export default function InternshipDetails() {
       await saveInternship(user.id, id);
       toast.success('Saved internship');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(friendlyError(err));
     }
   };
 

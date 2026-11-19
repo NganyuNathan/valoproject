@@ -4,6 +4,7 @@ import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUpload } from 
 import { listCompanies, createCompany, updateCompany, deleteCompany } from '../../services/companyService';
 import { uploadFile, BUCKETS } from '../../services/supabase';
 import './AdminTables.css';
+import { friendlyError } from '../../utils/errors';
 
 const emptyForm = { name: '', logo: '', industry: '', website: '', email: '', phone: '', description: '' };
 
@@ -31,7 +32,7 @@ export default function CompanyManagement() {
       setForm((f) => ({ ...f, logo: url }));
       toast.success('Logo uploaded');
     } catch (err) {
-      toast.error(err.message || 'Could not upload logo');
+      toast.error(friendlyError(err, 'Could not upload logo'));
     } finally {
       setUploadingLogo(false);
     }
@@ -43,12 +44,12 @@ export default function CompanyManagement() {
       if (editingId) { await updateCompany(editingId, form); toast.success('Company updated'); }
       else { await createCompany(form); toast.success('Company added'); }
       setShowForm(false); load();
-    } catch (err) { toast.error(err.message); }
+    } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this company?')) return;
-    try { await deleteCompany(id); toast.success('Deleted'); load(); } catch (err) { toast.error(err.message); }
+    try { await deleteCompany(id); toast.success('Deleted'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   return (

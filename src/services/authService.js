@@ -86,10 +86,16 @@ export async function getProfile(userId) {
   return data;
 }
 
+// Columns a user must never change from the browser (the database enforces this too).
+const PROTECTED_PROFILE_COLUMNS = ['id', 'role', 'suspended', 'email', 'created_at'];
+
 export async function updateProfile(userId, updates) {
+  const safe = { ...updates };
+  PROTECTED_PROFILE_COLUMNS.forEach((key) => delete safe[key]);
+
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
+    .update(safe)
     .eq('id', userId)
     .select()
     .single();

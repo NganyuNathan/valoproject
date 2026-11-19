@@ -16,7 +16,23 @@ export async function suspendStudent(id, suspended = true) {
   return data;
 }
 
+/**
+ * Permanently deletes a student's login account, profile, applications and uploaded
+ * files. This goes through the `admin-delete-user` Edge Function, which checks the
+ * caller really is an admin (deleting a login account needs the service-role key,
+ * which must never be in the browser).
+ */
 export async function deleteStudent(id) {
-  const { error } = await supabase.from('profiles').delete().eq('id', id);
-  if (error) throw error;
+  const { data, error } = await supabase.functions.invoke('admin-delete-user', { body: { userId: id } });
+  if (error || data?.error) {
+    let message = data?.error;
+    try {
+      if (!message && error?.context && typeof error.context.json === 'function') {
+        message = (await error.context.json())?.error;
+      }
+    } catch {
+      // body wasn't JSON — fall through
+    }
+    throw new Error(message || 'Could not delete this student.');
+  }
 }

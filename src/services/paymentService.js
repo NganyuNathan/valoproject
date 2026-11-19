@@ -19,19 +19,27 @@ async function getRealErrorMessage(error, fallbackData) {
   return error?.message || 'Unknown error calling the payment function';
 }
 
+/** Asks the server what this application will really be charged, so the screen always matches Fapshi's page. */
+export async function getApplicationFee(applicationId) {
+  const { data, error } = await supabase.functions.invoke('fapshi-payment', {
+    body: { action: 'fee', applicationId },
+  });
+  if (error || !data?.amount) return null;
+  return Number(data.amount);
+}
+
 /**
  * Creates a Fapshi-hosted checkout link for the application fee. The
  * student completes the actual payment on Fapshi's page (choosing MTN MoMo
  * or Orange Money) — nothing is charged automatically from here.
  */
-export async function requestFapshiPayment({ applicationId, userId, email, amount }) {
+export async function requestFapshiPayment({ applicationId }) {
   const { data, error } = await supabase.functions.invoke('fapshi-payment', {
+    // The server decides the amount and uses the signed-in account's own email;
+    // the redirect is checked against an allow-list there too.
     body: {
       action: 'request',
       applicationId,
-      userId,
-      email,
-      amount,
       redirectUrl: `${window.location.origin}/internships`,
     },
   });

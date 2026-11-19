@@ -3,6 +3,8 @@ import toast from 'react-hot-toast';
 import { updatePassword } from '../../services/authService';
 import useTheme from '../../hooks/useTheme';
 import '../Register/Auth.css';
+import { isStrongPassword, PASSWORD_RULE } from '../../utils/validators';
+import { friendlyError } from '../../utils/errors';
 
 export default function Settings() {
   const [password, setPassword] = useState('');
@@ -11,14 +13,14 @@ export default function Settings() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (password.length < 8) return toast.error('Password must be at least 8 characters');
+    if (!isStrongPassword(password)) return toast.error(`Password: ${PASSWORD_RULE.toLowerCase()}`);
     setSaving(true);
     try {
       await updatePassword(password);
       toast.success('Password updated');
       setPassword('');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(friendlyError(err));
     } finally {
       setSaving(false);
     }

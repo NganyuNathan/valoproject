@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { HiOutlineAcademicCap } from 'react-icons/hi';
 import { updatePassword } from '../../services/authService';
 import '../Register/Auth.css';
+import { isStrongPassword, PASSWORD_RULE } from '../../utils/validators';
+import { friendlyError } from '../../utils/errors';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -15,14 +17,14 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirm) return toast.error('Passwords do not match');
-    if (password.length < 8) return toast.error('Password must be at least 8 characters');
+    if (!isStrongPassword(password)) return toast.error(`Password: ${PASSWORD_RULE.toLowerCase()}`);
     setLoading(true);
     try {
       await updatePassword(password);
       toast.success('Password updated. Please sign in again.');
       navigate('/login');
     } catch (err) {
-      toast.error(err.message || 'Could not reset password');
+      toast.error(friendlyError(err, 'Could not reset password'));
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi';
 import { listAnnouncements, createAnnouncement, deleteAnnouncement } from '../../services/announcementService';
 import { formatDate } from '../../utils/formatters';
 import './AdminTables.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
@@ -17,11 +18,11 @@ export default function Announcements() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !message) return;
-    try { await createAnnouncement({ title, message }); toast.success('Announcement posted'); setTitle(''); setMessage(''); load(); } catch (err) { toast.error(err.message); }
+    try { await createAnnouncement({ title, message }); toast.success('Announcement posted'); setTitle(''); setMessage(''); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleDelete = async (id) => {
-    try { await deleteAnnouncement(id); toast.success('Removed'); load(); } catch (err) { toast.error(err.message); }
+    try { await deleteAnnouncement(id); toast.success('Removed'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   return (

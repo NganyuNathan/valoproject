@@ -7,6 +7,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { login, loginWithGoogle, resendConfirmation } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import '../Register/Auth.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,7 +33,7 @@ export default function Login() {
         toast.error('Please confirm your email first — check your inbox.');
       } else {
         setNeedsConfirm(false);
-        toast.error(err.message || 'Could not sign in');
+        toast.error(friendlyError(err, 'Could not sign in'));
       }
     } finally {
       setLoading(false);
@@ -44,7 +45,7 @@ export default function Login() {
       await resendConfirmation(email);
       toast.success('Confirmation email sent — check your inbox.');
     } catch (err) {
-      toast.error(err.message || 'Could not resend the email');
+      toast.error(friendlyError(err, 'Could not resend the email'));
     }
   };
 

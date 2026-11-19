@@ -5,6 +5,7 @@ import { listAllApplications, updateApplicationStatus, updatePaymentStatus, dele
 import { getSignedUrl, BUCKETS } from '../../services/supabase';
 import { formatDate } from '../../utils/formatters';
 import './AdminTables.css';
+import { friendlyError } from '../../utils/errors';
 
 const STATUSES = ['paid', 'pending', 'under_review', 'interview_scheduled', 'accepted', 'rejected'];
 
@@ -28,11 +29,11 @@ export default function ApplicationsManagement() {
   useEffect(load, [load]);
 
   const handleStatusChange = async (id, status) => {
-    try { await updateApplicationStatus(id, status); toast.success('Status updated'); load(); } catch (err) { toast.error(err.message); }
+    try { await updateApplicationStatus(id, status); toast.success('Status updated'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handlePaymentVerify = async (id, paymentStatus) => {
-    try { await updatePaymentStatus(id, paymentStatus); toast.success('Payment status updated'); load(); } catch (err) { toast.error(err.message); }
+    try { await updatePaymentStatus(id, paymentStatus); toast.success('Payment status updated'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleDelete = async (a) => {
@@ -44,7 +45,7 @@ export default function ApplicationsManagement() {
       setApplications((prev) => prev.filter((x) => x.id !== a.id));
       toast.success('Application deleted');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(friendlyError(err));
     }
   };
 
@@ -57,7 +58,7 @@ export default function ApplicationsManagement() {
       const signedUrl = await getSignedUrl(bucket, pathOrUrl, 120);
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      toast.error(err.message || `Could not open ${label}`);
+      toast.error(friendlyError(err, `Could not open ${label}`));
     }
   };
 

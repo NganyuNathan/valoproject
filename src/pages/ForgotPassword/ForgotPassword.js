@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { HiOutlineAcademicCap } from 'react-icons/hi';
 import { sendPasswordReset } from '../../services/authService';
 import '../Register/Auth.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export default function ForgotPassword() {
       setSent(true);
       toast.success('Reset link sent — check your inbox');
     } catch (err) {
-      toast.error(err.message || 'Could not send reset link');
+      toast.error(friendlyError(err, 'Could not send reset link'));
     } finally {
       setLoading(false);
     }

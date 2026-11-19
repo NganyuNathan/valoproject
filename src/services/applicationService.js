@@ -53,15 +53,52 @@ export async function updatePaymentStatus(id, paymentStatus) {
 }
 
 /**
- * Admin: permanently deletes a student's application.
+ * Admin: permanently deletes a student's application, plus the documents that only
+ * belonged to it.
  * A blocked delete (missing permission) doesn't raise an error in Supabase — it
  * just deletes 0 rows — so we check that a row really went away.
  */
 export async function deleteApplication(id) {
+  // Remember which files belonged to it before the row disappears.
+  const { data: app } = await supabase
+    .from('applications')
+    .select('student_id, resume_url, cover_letter_url, documents')
+    .eq('id', id)
+    .maybeSingle();
+
   const { data, error } = await supabase.from('applications').delete().eq('id', id).select('id');
   if (error) throw error;
   if (!data || data.length === 0) {
     throw new Error('Could not delete this application. Check that the admin delete policy exists in Supabase.');
+  }
+  if (app) await removeApplicationFiles(id, app); // best effort: never blocks the delete
+}
+
+async function removeApplicationFiles(id, app) {
+  try {
+    // The extra documents belong to this application alone.
+    const docPaths = (Array.isArray(app.documents) ? app.documents : []).map((d) => d?.path).filter(Boolean);
+    if (docPaths.length) await supabase.storage.from('resumes').remove(docPaths);
+
+    // The resume / cover letter may be shared with the student's profile or other
+    // applications, so only remove them when nothing else points at the same file.
+    const { data: profile } = await supabase
+      .from('profiles').select('resume_url, cover_letter_url').eq('id', app.student_id).maybeSingle();
+    const { data: others } = await supabase
+      .from('applications').select('resume_url, cover_letter_url').eq('student_id', app.student_id).neq('id', id);
+    const stillUsed = new Set([
+      profile?.resume_url, profile?.cover_letter_url,
+      ...(others || []).flatMap((o) => [o.resume_url, o.cover_letter_url]),
+    ].filter(Boolean));
+
+    if (app.resume_url && !stillUsed.has(app.resume_url)) {
+      await supabase.storage.from('resumes').remove([app.resume_url]);
+    }
+    if (app.cover_letter_url && !stillUsed.has(app.cover_letter_url)) {
+      await supabase.storage.from('cover-letters').remove([app.cover_letter_url]);
+    }
+  } catch {
+    // Leftover files are harmless; the application itself is already deleted.
   }
 }
 
@@ -106,6 +143,16 @@ export async function updateApplicationStatus(id, status) {
   return data;
 }
 
+/**
+ * Spreadsheet programs run cells that start with = + - @ as formulas, and students
+ * choose their own names — so those cells get a leading apostrophe to stay plain text.
+ */
+function csvCell(value) {
+  let text = String(value ?? '');
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 /** Converts an array of application rows into a CSV string for export. */
 export function applicationsToCSV(applications) {
   const headers = ['Student', 'Email', 'Internship', 'Status', 'Applied At'];
@@ -116,5 +163,5 @@ export function applicationsToCSV(applications) {
     a.status,
     new Date(a.applied_at).toLocaleDateString(),
   ]);
-  return [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  return [headers, ...rows].map((r) => r.map(csvCell).join(',')).join('\n');
 }

@@ -5,6 +5,7 @@ import { listAllInternshipsForAdmin, createInternship, updateInternship, deleteI
 import { listCompanies } from '../../services/companyService';
 import { uploadFile, BUCKETS } from '../../services/supabase';
 import './AdminTables.css';
+import { friendlyError } from '../../utils/errors';
 
 const PAGE_SIZE = 25;
 
@@ -25,7 +26,7 @@ export default function InternshipManagement() {
     setLoading(true);
     Promise.all([listAllInternshipsForAdmin(), listCompanies()])
       .then(([all, comps]) => { setItems(all || []); setCompanies(comps || []); })
-      .catch((err) => toast.error(err.message || 'Could not load internships'))
+      .catch((err) => toast.error(friendlyError(err, 'Could not load internships')))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -55,7 +56,7 @@ export default function InternshipManagement() {
       setForm((f) => ({ ...f, [`image_${slot}_url`]: url }));
       toast.success('Image uploaded');
     } catch (err) {
-      toast.error(err.message || 'Could not upload image');
+      toast.error(friendlyError(err, 'Could not upload image'));
     } finally {
       setUploadingImage(null);
     }
@@ -75,16 +76,16 @@ export default function InternshipManagement() {
       }
       setShowForm(false);
       load();
-    } catch (err) { toast.error(err.message); }
+    } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this internship?')) return;
-    try { await deleteInternship(id); toast.success('Deleted'); load(); } catch (err) { toast.error(err.message); }
+    try { await deleteInternship(id); toast.success('Deleted'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleArchive = async (id, status) => {
-    try { await setInternshipStatus(id, status === 'archived' ? 'published' : 'archived'); toast.success('Status updated'); load(); } catch (err) { toast.error(err.message); }
+    try { await setInternshipStatus(id, status === 'archived' ? 'published' : 'archived'); toast.success('Status updated'); load(); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   // Search across title, company, category, location, departments and status.
@@ -173,7 +174,8 @@ export default function InternshipManagement() {
                 <div className="field-hint">Add one or more departments this internship belongs to.</div>
               </div>
               <div className="grid-2">
-                <div className="field"><label>Salary / stipend</label><input className="input" type="number" value={form.salary} onChange={set('salary')} /></div>
+                <div className="field"><label>Salary / stipend</label><input className="input" type="number" min="0" step="1" value={form.salary} onChange={set('salary')} />
+                <div className="field-hint">Students are charged exactly this amount through Fapshi when they apply (minimum 100 FCFA). If it is empty or below 100, the standard application fee is charged instead.</div></div>
                 <div className="field"><label>Location</label><input className="input" value={form.location} onChange={set('location')} /></div>
               </div>
               <div className="grid-2">

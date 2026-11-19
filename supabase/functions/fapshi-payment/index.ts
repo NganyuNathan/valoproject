@@ -14,7 +14,14 @@
 //
 // Secrets:
 //   supabase secrets set FAPSHI_API_USER=... FAPSHI_API_KEY=... FAPSHI_ENV=sandbox
-//   (optional) FAPSHI_APPLICATION_FEE=250
+//   (optional) FAPSHI_APPLICATION_FEE=300   <- only used when an internship has no usable amount
+//
+// How much the student pays: the "Salary / stipend" amount the admin typed on the
+// internship. Fapshi only accepts whole amounts of at least 100 XAF, so an internship
+// with no amount (or under 100) uses the standard fee above instead.
+//   Strongly recommended (locks the function to your own website):
+//   supabase secrets set ALLOWED_ORIGINS=https://your-site.vercel.app,https://your-domain.com
+//   supabase secrets set APP_URL=https://your-site.vercel.app
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -25,16 +32,62 @@ const API_USER = Deno.env.get('FAPSHI_API_USER')!;
 const API_KEY = Deno.env.get('FAPSHI_API_KEY')!;
 
 // The fee is decided HERE, never by the browser, so nobody can pay less.
-const APPLICATION_FEE = Number(Deno.env.get('FAPSHI_APPLICATION_FEE') || 250);
+const APPLICATION_FEE = Number(Deno.env.get('FAPSHI_APPLICATION_FEE') || 300);
+const MIN_AMOUNT = 100; // Fapshi rejects anything below 100 XAF, and amounts must be whole numbers
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
+// Only your own website may call this function from a browser, and Fapshi may only
+// send students back to your own website. Leave ALLOWED_ORIGINS unset only while testing.
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '')
+  .split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean);
+const APP_URL = (Deno.env.get('APP_URL') || ALLOWED_ORIGINS[0] || '').replace(/\/$/, '');
+
+function corsFor(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allow = ALLOWED_ORIGINS.length === 0 ? '*' : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+  return {
+    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    Vary: 'Origin',
+  };
+}
+
+/** Never pass a browser-supplied redirect straight to Fapshi (open-redirect / phishing risk). */
+function safeRedirect(url?: string): string | undefined {
+  const fallback = APP_URL ? `${APP_URL}/internships` : undefined;
+  if (!url) return fallback;
+  try {
+    const u = new URL(url);
+    const allowed = ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : (APP_URL ? [APP_URL] : []);
+    return allowed.includes(u.origin) ? u.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Simple in-memory rate limiter (best effort: each function instance counts separately). */
+const hits = new Map<string, number[]>();
+function rateLimited(key: string, max: number, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const recent = (hits.get(key) || []).filter((t) => now - t < windowMs);
+  recent.push(now);
+  hits.set(key, recent);
+  if (hits.size > 5000) {
+    for (const [k, v] of hits) if (!v.some((t) => now - t < windowMs)) hits.delete(k);
+  }
+  return recent.length > max;
+}
+
+/** Errors whose message is safe to show to the user. Anything else becomes a generic message. */
+class PublicError extends Error {
+  status: number;
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
 
 const fapshiHeaders = {
   'Content-Type': 'application/json',
@@ -42,26 +95,55 @@ const fapshiHeaders = {
   apikey: API_KEY,
 };
 
-const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
-
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
 /** Works out which logged-in student is calling, from the JWT the app sends. */
-async function getCallerId(req: Request, supabase: SupabaseClient): Promise<string | null> {
+async function getCaller(req: Request, supabase: SupabaseClient): Promise<{ id: string; email?: string } | null> {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return null;
   const { data } = await supabase.auth.getUser(token);
-  return data?.user?.id ?? null;
+  return data?.user ? { id: data.user.id, email: data.user.email ?? undefined } : null;
+}
+
+/** Whole-number amount Fapshi will accept for an internship's amount, or the standard fee. */
+function amountFromSalary(salary: unknown): number {
+  const n = Math.round(Number(salary));
+  return Number.isFinite(n) && n >= MIN_AMOUNT ? n : APPLICATION_FEE;
+}
+
+// deno-lint-ignore no-explicit-any
+const one = (v: any) => (Array.isArray(v) ? v[0] : v);
+
+/** What this application should be charged right now (read from the internship, never from the browser). */
+async function currentAmount(supabase: SupabaseClient, applicationId: string): Promise<number> {
+  const { data } = await supabase.from('applications').select('internships(salary)').eq('id', applicationId).maybeSingle();
+  return amountFromSalary(one(data?.internships)?.salary);
+}
+
+/**
+ * What a payment for this application must be at least worth to count as paid:
+ * the amount locked in when the checkout was created (so an admin editing the
+ * internship's amount afterwards can't make a real payment look too small).
+ */
+async function expectedAmount(supabase: SupabaseClient, applicationId: string): Promise<number> {
+  let { data, error } = await supabase.from('applications').select('payment_amount, internships(salary)').eq('id', applicationId).maybeSingle();
+  if (error) {
+    // payment_amount.sql hasn't been run yet: fall back to the internship's current amount.
+    ({ data } = await supabase.from('applications').select('internships(salary)').eq('id', applicationId).maybeSingle());
+  }
+  const stored = Number(data?.payment_amount);
+  if (Number.isFinite(stored) && stored >= MIN_AMOUNT) return stored;
+  return amountFromSalary(one(data?.internships)?.salary);
 }
 
 /** Creates a Fapshi-hosted checkout link the student completes payment on. */
-async function initiatePay(args: { email?: string; externalId: string; userId: string; redirectUrl?: string }) {
+async function initiatePay(args: { amount: number; email?: string; externalId: string; userId: string; redirectUrl?: string }) {
   const res = await fetch(`${FAPSHI_BASE_URL}/initiate-pay`, {
     method: 'POST',
     headers: fapshiHeaders,
     body: JSON.stringify({
-      amount: APPLICATION_FEE,
+      amount: args.amount,
       email: args.email,
       externalId: args.externalId, // the application id: ties this transaction to exactly one application
       userId: args.userId,
@@ -70,7 +152,10 @@ async function initiatePay(args: { email?: string; externalId: string; userId: s
     }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Fapshi initiate-pay failed: ${res.status}`);
+  if (!res.ok) {
+    console.error('Fapshi initiate-pay failed:', res.status, data);
+    throw new PublicError('Could not start the payment. Please try again in a moment.', 502);
+  }
   return data; // { message, link, transId, dateInitiated }
 }
 
@@ -79,12 +164,15 @@ async function getPaymentStatus(transId: string) {
   // transId comes from the request (or an unauthenticated webhook), so make sure it's a plain
   // id before it goes into a URL — otherwise something like "../balance" could reach other endpoints.
   if (typeof transId !== 'string' || !/^[A-Za-z0-9_-]{3,64}$/.test(transId)) {
-    throw new Error('Invalid transaction id.');
+    throw new PublicError('Invalid transaction id.', 400);
   }
   const res = await fetch(`${FAPSHI_BASE_URL}/payment-status/${encodeURIComponent(transId)}`, { headers: fapshiHeaders });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Fapshi payment-status failed: ${res.status}`);
-  return data; // { transId, status, externalId, ... }
+  if (!res.ok) {
+    console.error('Fapshi payment-status failed:', res.status, data);
+    throw new PublicError('Could not check the payment right now. Please try again.', 502);
+  }
+  return data; // { transId, status, externalId, amount, ... }
 }
 
 /** Payment confirmed: record it and switch the application's status from 'unpaid' to 'paid'. */
@@ -104,37 +192,63 @@ async function markFailed(supabase: SupabaseClient, applicationId: string, trans
 }
 
 /** Applies a Fapshi-verified result to the application it belongs to. */
-async function applyResult(supabase: SupabaseClient, result: { status: string; transId: string; externalId?: string }) {
+async function applyResult(supabase: SupabaseClient, result: { status: string; transId: string; externalId?: string; amount?: number | string }) {
   if (!result.externalId) return;
-  if (result.status === 'SUCCESSFUL') await markPaid(supabase, result.externalId);
+  if (result.status === 'SUCCESSFUL') {
+    // Defence in depth: never accept a payment smaller than what this application was charged.
+    const paid = Number(result.amount);
+    const expected = await expectedAmount(supabase, result.externalId);
+    if (Number.isFinite(paid) && paid < expected) {
+      console.error(`Payment ${result.transId} is below the amount due (${paid} < ${expected}); not marking as paid.`);
+      return;
+    }
+    await markPaid(supabase, result.externalId);
+  }
   else if (result.status === 'FAILED' || result.status === 'EXPIRED') await markFailed(supabase, result.externalId, result.transId);
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const reply = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsFor(req), 'Content-Type': 'application/json' } });
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsFor(req) });
 
   if (!API_USER || !API_KEY) {
-    return reply({ error: 'FAPSHI_API_USER / FAPSHI_API_KEY are not set on this function. Run `supabase secrets set ...` and redeploy.' }, 500);
+    console.error('FAPSHI_API_USER / FAPSHI_API_KEY are not set on this function.');
+    return reply({ error: 'Payments are temporarily unavailable.' }, 500);
   }
 
   try {
     const body = await req.json();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
 
     // ---- 3. Fapshi's webhook (no `action`): re-check with Fapshi, then update ----
     if (!body.action && body.transId) {
+      if (rateLimited(`ip:${ip}`, 60)) return reply({ error: 'Too many requests.' }, 429);
       const verified = await getPaymentStatus(body.transId);
       await applyResult(supabase, verified);
       return reply({ received: true });
     }
 
     // Everything below is a call from the app and needs a logged-in student.
-    const callerId = await getCallerId(req, supabase);
-    if (!callerId) return reply({ error: 'You need to be signed in.' }, 401);
+    const caller = await getCaller(req, supabase);
+    if (!caller) return reply({ error: 'You need to be signed in.' }, 401);
+    if (rateLimited(`user:${caller.id}`, 40)) return reply({ error: 'Too many requests. Please slow down.' }, 429);
+    const callerId = caller.id;
+
+    // ---- 0. The amount due (so the app always shows what Fapshi will really charge) ----
+    if (body.action === 'fee') {
+      if (!body.applicationId) return reply({ amount: APPLICATION_FEE });
+      const { data: own } = await supabase
+        .from('applications').select('student_id').eq('id', body.applicationId).maybeSingle();
+      if (!own || own.student_id !== callerId) return reply({ error: 'Application not found.' }, 403);
+      return reply({ amount: await currentAmount(supabase, body.applicationId) });
+    }
 
     // ---- 1. Start a payment ----
     if (body.action === 'request') {
-      const { applicationId, email, redirectUrl } = body;
+      const { applicationId, redirectUrl } = body;
       if (!applicationId) return reply({ error: 'Missing applicationId.' }, 400);
 
       const { data: app } = await supabase
@@ -143,13 +257,23 @@ Deno.serve(async (req) => {
       if (!app || app.student_id !== callerId) return reply({ error: 'Application not found.' }, 403);
       if (app.payment_status === 'verified') return reply({ error: 'This application is already paid.' }, 400);
 
-      const result = await initiatePay({ email, externalId: app.id, userId: callerId, redirectUrl });
+      // The amount is read from the internship itself — the browser has no say in it.
+      const amount = await currentAmount(supabase, app.id);
 
-      await supabase.from('applications').update({
-        payment_method: 'fapshi',
-        payment_reference: result.transId,
-        payment_status: 'unpaid',
-      }).eq('id', app.id);
+      // The email comes from the signed-in account, and the redirect is checked against the allow-list.
+      const result = await initiatePay({
+        amount,
+        email: caller.email,
+        externalId: app.id,
+        userId: callerId,
+        redirectUrl: safeRedirect(redirectUrl),
+      });
+
+      // Lock in the amount that was charged (used later to check the payment was big enough).
+      const record = { payment_method: 'fapshi', payment_reference: result.transId, payment_status: 'unpaid' };
+      const { error: lockError } = await supabase.from('applications').update({ ...record, payment_amount: amount }).eq('id', app.id);
+      // payment_amount.sql not run yet: still record the payment itself.
+      if (lockError) await supabase.from('applications').update(record).eq('id', app.id);
 
       return reply({ link: result.link, transId: result.transId });
     }
@@ -170,8 +294,11 @@ Deno.serve(async (req) => {
       return reply(result);
     }
 
-    return reply({ error: `Unknown action: ${body.action}` }, 400);
+    return reply({ error: 'Unknown action.' }, 400);
   } catch (err) {
-    return reply({ error: (err as Error).message }, 500);
+    if (err instanceof PublicError) return reply({ error: err.message }, err.status);
+    // Real details stay in the function logs, never in the response.
+    console.error('fapshi-payment error:', err);
+    return reply({ error: 'Something went wrong. Please try again.' }, 500);
   }
 });

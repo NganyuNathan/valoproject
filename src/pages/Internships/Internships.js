@@ -10,6 +10,7 @@ import { useInternships, DEFAULT_FILTERS } from '../../context/InternshipContext
 import { useAuth } from '../../context/AuthContext';
 import { saveInternship, unsaveInternship } from '../../services/internshipService';
 import './Internships.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function Internships() {
   const [searchParams] = useSearchParams();
@@ -47,7 +48,7 @@ export default function Internships() {
         toast.success('Saved internship');
       }
     } catch (err) {
-      toast.error(err.message || 'Something went wrong');
+      toast.error(friendlyError(err, 'Something went wrong'));
     }
   }, [isAuthenticated, savedIds, user]);
 

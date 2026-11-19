@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HiOutlineCreditCard, HiOutlineExternalLink, HiOutlineXCircle } from 'react-icons/hi';
 import { PAYMENT_CONFIG } from '../../config/payment';
-import { requestFapshiPayment, pollFapshiPayment } from '../../services/paymentService';
+import { requestFapshiPayment, pollFapshiPayment, getApplicationFee } from '../../services/paymentService';
+import { friendlyError } from '../../utils/errors';
 
 /**
  * Step 1 of applying: pay the application fee via Fapshi's hosted checkout
@@ -13,14 +14,20 @@ import { requestFapshiPayment, pollFapshiPayment } from '../../services/paymentS
 export default function PaymentStep({ applicationId, userId, email, onConfirmed }) {
   const [stage, setStage] = useState('idle'); // 'idle' | 'redirecting' | 'waiting' | 'failed'
   const [error, setError] = useState(null);
+  const [fee, setFee] = useState(null);
+
+  // Show the amount the server will really charge on Fapshi (the internship's amount).
+  useEffect(() => {
+    let cancelled = false;
+    getApplicationFee(applicationId).then((amount) => { if (!cancelled) setFee(amount || PAYMENT_CONFIG.amount); });
+    return () => { cancelled = true; };
+  }, [applicationId]);
 
   const handlePay = async () => {
     setStage('redirecting');
     setError(null);
     try {
-      const { link, transId } = await requestFapshiPayment({
-        applicationId, userId, email, amount: PAYMENT_CONFIG.amount,
-      });
+      const { link, transId } = await requestFapshiPayment({ applicationId });
 
       const checkoutWindow = window.open(link, '_blank', 'noopener,noreferrer');
       if (!checkoutWindow) {
@@ -40,7 +47,7 @@ export default function PaymentStep({ applicationId, userId, email, onConfirmed 
       }
     } catch (err) {
       setStage('failed');
-      setError(err.message || 'Something went wrong starting the payment.');
+      setError(friendlyError(err, 'Something went wrong starting the payment.'));
     }
   };
 
@@ -48,7 +55,7 @@ export default function PaymentStep({ applicationId, userId, email, onConfirmed 
     <div className="payment-step">
       <div className="payment-step__amount">
         <span>Application fee</span>
-        <strong>{PAYMENT_CONFIG.amount} {PAYMENT_CONFIG.currency}</strong>
+        <strong>{fee === null ? '…' : `${fee} ${PAYMENT_CONFIG.currency}`}</strong>
       </div>
 
       <p className="payment-step__help">

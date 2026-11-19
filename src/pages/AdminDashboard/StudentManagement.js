@@ -4,6 +4,7 @@ import { HiOutlineBan, HiOutlineTrash, HiOutlineKey } from 'react-icons/hi';
 import { listStudents, suspendStudent, deleteStudent } from '../../services/studentService';
 import { sendPasswordReset } from '../../services/authService';
 import './AdminTables.css';
+import { friendlyError } from '../../utils/errors';
 
 export default function StudentManagement() {
   const [students, setStudents] = useState([]);
@@ -14,14 +15,14 @@ export default function StudentManagement() {
   useEffect(() => load(''), []);
 
   const handleSuspend = async (s) => {
-    try { await suspendStudent(s.id, !s.suspended); toast.success(s.suspended ? 'Account reinstated' : 'Account suspended'); load(search); } catch (err) { toast.error(err.message); }
+    try { await suspendStudent(s.id, !s.suspended); toast.success(s.suspended ? 'Account reinstated' : 'Account suspended'); load(search); } catch (err) { toast.error(friendlyError(err)); }
   };
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this student account?')) return;
-    try { await deleteStudent(id); toast.success('Deleted'); load(search); } catch (err) { toast.error(err.message); }
+    try { await deleteStudent(id); toast.success('Deleted'); load(search); } catch (err) { toast.error(friendlyError(err)); }
   };
   const handleReset = async (email) => {
-    try { await sendPasswordReset(email); toast.success('Password reset email sent'); } catch (err) { toast.error(err.message); }
+    try { await sendPasswordReset(email); toast.success('Password reset email sent'); } catch (err) { toast.error(friendlyError(err)); }
   };
 
   return (

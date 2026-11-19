@@ -1,6 +1,22 @@
-node_modules
-build
+# dependencies
+node_modules/
+
+# build output
+build/
+dist/
+
+# secrets and local config — never commit these
 .env
 .env.local
+.env.*.local
+
+# Supabase CLI local state (contains project identifiers)
+supabase/.temp/
+supabase/.branches/
+
+# Vercel
+.vercel/
+
+# misc
 .DS_Store
 npm-debug.log*

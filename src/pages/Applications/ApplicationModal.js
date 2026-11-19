@@ -7,6 +7,7 @@ import { createOrGetDraftApplication, updateApplicationDetails } from '../../ser
 import { uploadPrivateFile, BUCKETS } from '../../services/supabase';
 import PaymentStep from './PaymentStep';
 import './Applications.css';
+import { friendlyError } from '../../utils/errors';
 
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024; // 10 MB per document
 
@@ -34,7 +35,7 @@ export default function ApplicationModal({ internship, onClose }) {
         setStep('form');
       })
       .catch((err) => {
-        toast.error(err.message || 'Could not start your application');
+        toast.error(friendlyError(err, 'Could not start your application'));
         onClose();
       });
     return () => { cancelled = true; };
@@ -65,7 +66,7 @@ export default function ApplicationModal({ internship, onClose }) {
       const stamp = Date.now();
       uploadedDocuments = await Promise.all(
         documents.map(async (file, i) => {
-          const safeName = file.name.replace(/[^\w.-]+/g, '_');
+          const safeName = file.name.replace(/[^\w.\-]+/g, '_');
           const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/documents/${stamp}-${i}-${safeName}`, file);
           return { name: file.name, path };
         })
@@ -114,7 +115,7 @@ export default function ApplicationModal({ internship, onClose }) {
         toast.success('Application submitted!');
         onClose();
       } catch (err) {
-        toast.error(err.message || 'Could not submit application');
+        toast.error(friendlyError(err, 'Could not submit application'));
         setStep('form');
       }
       return;
@@ -132,7 +133,7 @@ export default function ApplicationModal({ internship, onClose }) {
       toast.success('Payment confirmed — your application has been submitted!');
       onClose();
     } catch (err) {
-      toast.error(err.message || 'Payment went through, but we could not save your documents — please try again.');
+      toast.error(friendlyError(err, 'Payment went through, but we could not save your documents — please try again.'));
       setStep('form');
     }
   };
@@ -175,7 +176,7 @@ export default function ApplicationModal({ internship, onClose }) {
                 </label>
               </div>
               <div className="field">
-                <label>Upload any additional documents as listed in the requirements</label>
+                <label>Upload listed documents</label>
                 <label className="file-input">
                   <HiOutlineUpload />
                   {documents.length > 0 ? 'Add more documents' : 'Choose files (you can select several)'}
@@ -204,7 +205,7 @@ export default function ApplicationModal({ internship, onClose }) {
                     ))}
                   </ul>
                 )}
-                <div className="field-hint">PDF, Word or image files, 2MB each</div>
+                <div className="field-hint">PDF, Word or image files, up to 10 MB each.</div>
               </div>
               {formError && <div className="field-error" style={{ marginBottom: 8 }}>{formError}</div>}
               {!alreadyPaid && (

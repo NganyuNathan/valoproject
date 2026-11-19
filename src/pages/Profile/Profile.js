@@ -7,6 +7,7 @@ import { uploadFile, uploadPrivateFile, BUCKETS } from '../../services/supabase'
 import { initials } from '../../utils/formatters';
 import '../Register/Auth.css';
 import './Profile.css';
+import { friendlyError } from '../../utils/errors';
 
 const SKILLS = ['Java', 'Python', 'JavaScript', 'React', 'SQL', 'C++', 'PHP', 'Networking', 'AI', 'Machine Learning', 'UI/UX', 'Node.js'];
 
@@ -31,7 +32,7 @@ export default function Profile() {
       const url = await uploadFile(BUCKETS.AVATARS, `${user.id}/photo-${Date.now()}`, file);
       setForm((f) => ({ ...f, profile_photo: url }));
       toast.success('Photo uploaded — remember to save changes');
-    } catch (err) { toast.error(err.message); }
+    } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleResume = async (e) => {
@@ -41,7 +42,7 @@ export default function Profile() {
       const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/resume-${Date.now()}`, file);
       setForm((f) => ({ ...f, resume_url: path }));
       toast.success('Resume uploaded — remember to save changes');
-    } catch (err) { toast.error(err.message); }
+    } catch (err) { toast.error(friendlyError(err)); }
   };
 
   const handleSave = async (e) => {
@@ -52,7 +53,7 @@ export default function Profile() {
       await refreshProfile();
       toast.success('Profile updated');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(friendlyError(err));
     } finally {
       setSaving(false);
     }

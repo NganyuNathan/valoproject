@@ -6,6 +6,7 @@ import { HiOutlineAcademicCap, HiOutlineMail } from 'react-icons/hi';
 import { registerStudent, resendConfirmation } from '../../services/authService';
 import { validateRegistrationStep } from '../../utils/validators';
 import './Auth.css';
+import { friendlyError } from '../../utils/errors';
 
 const STEPS = ['account', 'education'];
 
@@ -46,7 +47,7 @@ export default function Register() {
       await resendConfirmation(sentTo);
       toast.success('Confirmation email sent again');
     } catch (err) {
-      toast.error(err.message || 'Could not resend the email');
+      toast.error(friendlyError(err, 'Could not resend the email'));
     } finally {
       setResending(false);
     }
@@ -66,7 +67,7 @@ export default function Register() {
         setSentTo(email);
       }
     } catch (err) {
-      toast.error(err.message || 'Could not create account');
+      toast.error(friendlyError(err, 'Could not create account'));
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +123,7 @@ export default function Register() {
                 <div className="field"><label>Phone number</label><input className="input" value={form.phone} onChange={set('phone')} placeholder="+237 6XX XXX XXX" /></div>
               </div>
               <div className="grid-2">
-                <div className="field"><label>Password</label><input className="input" type="password" value={form.password} onChange={set('password')} /><div className="field-hint">At least 8 characters.</div>{errors.password && <div className="field-error">{errors.password}</div>}</div>
+                <div className="field"><label>Password</label><input className="input" type="password" value={form.password} onChange={set('password')} /><div className="field-hint">At least 10 characters, with a letter and a number.</div>{errors.password && <div className="field-error">{errors.password}</div>}</div>
                 <div className="field"><label>Confirm password</label><input className="input" type="password" value={form.confirm_password} onChange={set('confirm_password')} />{errors.confirm_password && <div className="field-error">{errors.confirm_password}</div>}</div>
               </div>
             </fieldset>

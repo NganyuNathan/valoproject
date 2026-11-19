@@ -4,6 +4,7 @@ import { HiOutlineTrash } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext';
 import { listSavedInternships, unsaveInternship } from '../../services/internshipService';
 import InternshipCard from '../../components/InternshipCard/InternshipCard';
+import { friendlyError } from '../../utils/errors';
 
 export default function SavedInternships() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export default function SavedInternships() {
       setSaved((prev) => prev.filter((s) => s.id !== savedRowId));
       toast.success('Removed from saved');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(friendlyError(err));
     }
   };
 

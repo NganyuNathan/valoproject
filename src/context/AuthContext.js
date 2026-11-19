@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../services/supabase';
+import toast from 'react-hot-toast';
 import { getProfile } from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -16,6 +17,13 @@ export function AuthProvider({ children }) {
     }
     try {
       const p = await getProfile(userId);
+      if (p.suspended) {
+        // A suspended account can't use the site: sign it straight back out.
+        await supabase.auth.signOut();
+        setProfile(null);
+        toast.error('Your account has been suspended. Please contact support.');
+        return;
+      }
       setProfile(p);
     } catch (err) {
       // Profile row may not exist yet right after signup

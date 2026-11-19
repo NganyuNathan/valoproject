@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { listInternships } from '../services/internshipService';
+import { friendlyError } from '../utils/errors';
 
 const InternshipContext = createContext(null);
 
@@ -48,7 +49,7 @@ export function InternshipProvider({ children }) {
       setTotal(count || 0);
     } catch (err) {
       if (id !== requestId.current) return;
-      setError(err.message || 'Failed to load internships');
+      setError(friendlyError(err, 'Failed to load internships'));
     } finally {
       if (id === requestId.current) setLoading(false);
     }
