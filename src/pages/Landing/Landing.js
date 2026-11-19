@@ -76,7 +76,7 @@ export default function Landing() {
             <div className="hero__stats">
               <div><strong>1,240+</strong><span>Live listings</span></div>
               <div><strong>310</strong><span>Verified companies</span></div>
-              <div><strong>18k</strong><span>Students placed</span></div>
+              <div><strong>100+</strong><span>Students placed</span></div>
             </div>
           </motion.div>
 
