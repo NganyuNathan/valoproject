@@ -177,9 +177,16 @@ async function getPaymentStatus(transId: string) {
 
 /** Payment confirmed: record it and switch the application's status from 'unpaid' to 'paid'. */
 async function markPaid(supabase: SupabaseClient, applicationId: string) {
-  await supabase.from('applications').update({ payment_status: 'verified' }).eq('id', applicationId);
-  // Only moves unpaid -> paid. If an admin has already progressed it, leave their status alone.
-  await supabase.from('applications').update({ status: 'paid' }).eq('id', applicationId).eq('status', 'unpaid');
+  // Set both fields together after the transaction has been verified with Fapshi.
+  // If an admin has already progressed the application, preserve that status.
+  const { data: app, error: readError } = await supabase
+    .from('applications').select('status').eq('id', applicationId).maybeSingle();
+  if (readError) throw readError;
+  if (!app) throw new Error('Application not found while confirming payment.');
+  const changes: Record<string, string> = { payment_status: 'verified' };
+  if (app.status === 'unpaid') changes.status = 'paid';
+  const { error } = await supabase.from('applications').update(changes).eq('id', applicationId);
+  if (error) throw error;
 }
 
 /** Payment failed/expired. Ignored if it's an old attempt or the application is already paid. */

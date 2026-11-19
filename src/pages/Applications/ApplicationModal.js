@@ -53,10 +53,10 @@ export default function ApplicationModal({ internship, onClose }) {
     let coverLetterUrl = profile?.cover_letter_url || null;
 
     if (resumeFile) {
-      resumeUrl = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/${Date.now()}-${resumeFile.name}`, resumeFile);
+      resumeUrl = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/${applicationId}/${Date.now()}-resume-${resumeFile.name.replace(/[^\w.-]+/g, '_')}`, resumeFile);
     }
     if (coverLetterFile) {
-      coverLetterUrl = await uploadPrivateFile(BUCKETS.COVER_LETTERS, `${user.id}/${Date.now()}-${coverLetterFile.name}`, coverLetterFile);
+      coverLetterUrl = await uploadPrivateFile(BUCKETS.COVER_LETTERS, `${user.id}/${applicationId}/${Date.now()}-cover-${coverLetterFile.name.replace(/[^\w.-]+/g, '_')}`, coverLetterFile);
     }
 
     // Extra documents: uploaded to the same private bucket as the resume, under
@@ -66,8 +66,8 @@ export default function ApplicationModal({ internship, onClose }) {
       const stamp = Date.now();
       uploadedDocuments = await Promise.all(
         documents.map(async (file, i) => {
-         const safeName = file.name.replace(/[^\w.-]+/g, '_');
-          const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/documents/${stamp}-${i}-${safeName}`, file);
+          const safeName = file.name.replace(/[^\w.-]+/g, '_');
+          const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/${applicationId}/documents/${stamp}-${i}-${safeName}`, file);
           return { name: file.name, path };
         })
       );

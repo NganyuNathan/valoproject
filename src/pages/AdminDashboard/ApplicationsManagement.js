@@ -49,7 +49,11 @@ export default function ApplicationsManagement() {
     }
   };
 
-  const handleViewDocument = async (bucket, pathOrUrl, label) => {
+  const handleViewDocument = async (application, bucket, pathOrUrl, label) => {
+    if (application?.payment_status !== 'verified' || application?.status === 'unpaid') {
+      toast.error('Documents are available only after successful payment.');
+      return;
+    }
     if (!pathOrUrl) {
       toast.error(`No ${label} on file for this application`);
       return;
@@ -99,18 +103,18 @@ export default function ApplicationsManagement() {
                   <td>{formatDate(a.applied_at)}</td>
                   <td className="admin-table__actions">
                     <button
-                      onClick={() => handleViewDocument(BUCKETS.RESUMES, a.resume_url, 'resume')}
+                      onClick={() => handleViewDocument(a, BUCKETS.RESUMES, a.resume_url, 'resume')}
                       aria-label="View resume"
                       title="View resume"
-                      disabled={!a.resume_url}
+                      disabled={!a.resume_url || a.payment_status !== 'verified' || a.status === 'unpaid'}
                     >
                       <HiOutlineDocumentText />
                     </button>
                     <button
-                      onClick={() => handleViewDocument(BUCKETS.COVER_LETTERS, a.cover_letter_url, 'cover letter')}
+                      onClick={() => handleViewDocument(a, BUCKETS.COVER_LETTERS, a.cover_letter_url, 'cover letter')}
                       aria-label="View cover letter"
                       title="View cover letter"
-                      disabled={!a.cover_letter_url}
+                      disabled={!a.cover_letter_url || a.payment_status !== 'verified' || a.status === 'unpaid'}
                     >
                       <HiOutlineMail />
                     </button>
@@ -120,7 +124,8 @@ export default function ApplicationsManagement() {
                           <button
                             key={d.path}
                             type="button"
-                            onClick={() => handleViewDocument(BUCKETS.RESUMES, d.path, 'document')}
+                            disabled={a.payment_status !== 'verified' || a.status === 'unpaid'}
+                            onClick={() => handleViewDocument(a, BUCKETS.RESUMES, d.path, 'document')}
                             title={`Open ${d.name}`}
                             style={{ fontSize: '0.75rem', textDecoration: 'underline', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                           >

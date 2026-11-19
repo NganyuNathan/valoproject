@@ -1,11 +1,6 @@
--- =========================================================
--- Application documents: lets a student attach several extra
--- documents ("Upload listed documents") to an application.
--- Run this once in the Supabase SQL Editor. Safe to re-run.
---
--- Files are stored in the existing private `resumes` bucket under
--- <user id>/documents/..., so the existing storage policies already
--- cover them (students manage their own, admins can read all).
--- Each entry looks like: { "name": "transcript.pdf", "path": "<user id>/documents/123-0-transcript.pdf" }
--- =========================================================
-alter table applications add column if not exists documents jsonb not null default '[]'::jsonb;
+-- Application documents metadata. Run once; safe to re-run.
+alter table public.applications add column if not exists documents jsonb not null default '[]'::jsonb;
+
+-- Application-specific files are stored in the private `resumes` bucket under
+-- <student_id>/<application_id>/documents/... . The application row stores
+-- only the storage path and original display name.

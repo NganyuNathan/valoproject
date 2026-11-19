@@ -56,7 +56,7 @@ export async function uploadFile(bucket, path, file) {
 export async function uploadPrivateFile(bucket, path, file) {
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(path, file, { upsert: true, cacheControl: '3600' });
+    .upload(path, file, { upsert: false, cacheControl: '3600' });
 
   if (uploadError) throw uploadError;
   return path; // caller stores this path as resume_url / cover_letter_url
