@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { HiOutlineX, HiOutlineUpload } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext';
-import { createOrGetDraftApplication, updateApplicationDetails } from '../../services/applicationService';
-import { uploadPrivateFile, BUCKETS } from '../../services/supabase';
+import { createOrGetDraftApplication } from '../../services/applicationService';
+import { savePendingUpload, uploadAndAttach } from '../../services/pendingUploads';
 import PaymentStep from './PaymentStep';
 import './Applications.css';
 import { friendlyError } from '../../utils/errors';
@@ -42,41 +42,23 @@ export default function ApplicationModal({ internship, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internship.id, user.id]);
 
+  // What the student chose, in the shape the upload service needs.
+  const buildEntry = () => ({
+    applicationId,
+    userId: user.id,
+    resumeFile,
+    coverLetterFile,
+    documents,
+    profileResumePath: resumeFile ? null : profile?.resume_url || null,
+    profileCoverLetterPath: coverLetterFile ? null : profile?.cover_letter_url || null,
+  });
+
   /**
-   * Actually uploads the resume, cover letter and any extra documents and
-   * saves them to the application row. Only ever called once payment
-   * has been confirmed (or was already confirmed in an earlier session) —
-   * nothing is written to storage or the database before that.
+   * Uploads the files and saves them to the application. Only ever called once payment is
+   * confirmed (or was already confirmed in an earlier session) — until then the files stay in
+   * this browser and nothing is written to Supabase storage or the database.
    */
-  const persistDocuments = async () => {
-    let resumeUrl = profile?.resume_url;
-    let coverLetterUrl = profile?.cover_letter_url || null;
-
-    if (resumeFile) {
-      resumeUrl = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/${applicationId}/${Date.now()}-resume-${resumeFile.name.replace(/[^\w.-]+/g, '_')}`, resumeFile);
-    }
-    if (coverLetterFile) {
-      coverLetterUrl = await uploadPrivateFile(BUCKETS.COVER_LETTERS, `${user.id}/${applicationId}/${Date.now()}-cover-${coverLetterFile.name.replace(/[^\w.-]+/g, '_')}`, coverLetterFile);
-    }
-
-    // Extra documents: uploaded to the same private bucket as the resume, under
-    // the student's own folder. Only the storage paths are saved in the database.
-    let uploadedDocuments;
-    if (documents.length > 0) {
-      const stamp = Date.now();
-      uploadedDocuments = await Promise.all(
-        documents.map(async (file, i) => {
-          const safeName = file.name.replace(/[^\w.-]+/g, '_');
-          const path = await uploadPrivateFile(BUCKETS.RESUMES, `${user.id}/${applicationId}/documents/${stamp}-${i}-${safeName}`, file);
-          return { name: file.name, path };
-        })
-      );
-    }
-
-    await updateApplicationDetails(applicationId, {
-      resumeUrl, coverLetterUrl, documents: uploadedDocuments,
-    });
-  };
+  const persistDocuments = () => uploadAndAttach(buildEntry());
 
   // Adds newly chosen files to the list (skipping exact duplicates).
   const handleAddDocuments = (e) => {
@@ -121,6 +103,9 @@ export default function ApplicationModal({ internship, onClose }) {
       return;
     }
 
+    // Keep the files in this browser (not on the server) so they survive the student closing the
+    // tab or being redirected to Fapshi and back. They are uploaded once payment is confirmed.
+    await savePendingUpload(buildEntry());
     setStep('payment');
   };
 
@@ -133,8 +118,8 @@ export default function ApplicationModal({ internship, onClose }) {
       toast.success('Payment confirmed — your application has been submitted!');
       onClose();
     } catch (err) {
-      toast.error(friendlyError(err, 'Payment went through, but we could not save your documents — please try again.'));
-      setStep('form');
+      toast.error(friendlyError(err, 'Payment went through, but we could not save your documents yet. We will keep trying — please stay on this site.'));
+      onClose();
     }
   };
 
@@ -210,7 +195,7 @@ export default function ApplicationModal({ internship, onClose }) {
               {formError && <div className="field-error" style={{ marginBottom: 8 }}>{formError}</div>}
               {!alreadyPaid && (
                 <p className="field-hint" style={{ marginBottom: 8 }}>
-                  Your documents are only uploaded after payment is confirmed — nothing is saved yet.
+                  Your documents are only uploaded after payment is confirmed — nothing is saved on our servers yet. Please use the same browser until your payment is confirmed.
                 </p>
               )}
               <button className="btn btn-primary btn-block">

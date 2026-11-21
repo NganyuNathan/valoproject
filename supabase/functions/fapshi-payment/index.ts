@@ -7,6 +7,13 @@
 //   1. { action: 'request', applicationId, email, redirectUrl }   (from the app, student's JWT)
 //   2. { action: 'status',  transId }                              (from the app, student's JWT)
 //   3. Fapshi's webhook: { transId, status, ... } with no `action`  (from Fapshi, no JWT)
+//   4. { action: 'sync' }  catches up payments that were completed but never confirmed
+//      (student closed the tab, webhook missed). Admins sync every pending application,
+//      students only their own.
+//
+// IMPORTANT: set the webhook URL in your Fapshi dashboard to
+//   https://<your-project-ref>.supabase.co/functions/v1/fapshi-payment
+// so payments flip to "Paid" on their own even if the student closes the page.
 //
 // Deploy (note --no-verify-jwt so Fapshi's webhook can reach it; the app's calls
 // are verified inside this function instead):
@@ -299,6 +306,35 @@ Deno.serve(async (req) => {
 
       await applyResult(supabase, result);
       return reply(result);
+    }
+
+    // ---- 4. Catch up on payments that were completed but never confirmed ----
+    // Looks at applications still marked unpaid that have a Fapshi transaction, asks Fapshi
+    // (never trusting the browser) and applies the real result. Safe to call repeatedly.
+    if (body.action === 'sync') {
+      if (rateLimited(`sync:${callerId}`, 6)) return reply({ error: 'Too many requests. Please slow down.' }, 429);
+      const { data: me } = await supabase.from('profiles').select('role').eq('id', callerId).maybeSingle();
+      let query = supabase
+        .from('applications')
+        .select('id, payment_reference')
+        .eq('payment_status', 'unpaid')
+        .not('payment_reference', 'is', null)
+        .limit(25);
+      if (me?.role !== 'admin') query = query.eq('student_id', callerId);
+      const { data: pending } = await query;
+
+      let confirmed = 0;
+      for (const p of pending || []) {
+        try {
+          const result = await getPaymentStatus(p.payment_reference);
+          if (result.externalId !== p.id) continue; // transaction belongs to another application
+          await applyResult(supabase, result);
+          if (result.status === 'SUCCESSFUL') confirmed++;
+        } catch (err) {
+          console.error('sync: could not check', p.payment_reference, err);
+        }
+      }
+      return reply({ checked: (pending || []).length, confirmed });
     }
 
     return reply({ error: 'Unknown action.' }, 400);

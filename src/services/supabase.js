@@ -67,14 +67,15 @@ export async function uploadPrivateFile(bucket, path, file) {
  * `pathOrUrl` may be a raw storage path, or (for backwards compatibility with
  * older rows saved before this fix) a full public-style URL — either way we
  * extract just the path relative to the bucket before signing.
+ * Pass `{ download: 'file-name.pdf' }` to get a link that saves the file instead of opening it.
  */
-export async function getSignedUrl(bucket, pathOrUrl, expiresInSeconds = 120) {
+export async function getSignedUrl(bucket, pathOrUrl, expiresInSeconds = 120, { download } = {}) {
   if (!pathOrUrl) return null;
   const marker = `/${bucket}/`;
   const idx = pathOrUrl.indexOf(marker);
   const path = idx >= 0 ? pathOrUrl.slice(idx + marker.length) : pathOrUrl;
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds, download ? { download } : undefined);
   if (error) throw error;
   return data.signedUrl;
 }

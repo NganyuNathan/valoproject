@@ -69,3 +69,18 @@ export async function pollFapshiPayment({ transId, applicationId, intervalMs = 4
   }
   throw new Error('Payment confirmation timed out — if you completed payment, refresh and check My Applications.');
 }
+
+/**
+ * Asks the server to re-check any payment that was started but never confirmed
+ * (the student closed the tab, the webhook was missed...). Admins check everyone's,
+ * students only their own. Never throws: a failed sync just means nothing changed.
+ */
+export async function syncPayments() {
+  try {
+    const { data, error } = await supabase.functions.invoke('fapshi-payment', { body: { action: 'sync' } });
+    if (error || data?.error) return { checked: 0, confirmed: 0 };
+    return data;
+  } catch {
+    return { checked: 0, confirmed: 0 };
+  }
+}

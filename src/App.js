@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout/DashboardLayout';
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
+import PendingUploadFinisher from './components/PendingUploadFinisher';
 import * as R from './routes';
 
 function PageFallback() {
@@ -32,6 +33,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <PendingUploadFinisher />
         <InternshipProvider>
           <BrowserRouter>
             <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'Manrope, sans-serif' } }} />
